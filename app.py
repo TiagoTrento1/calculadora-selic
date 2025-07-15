@@ -29,7 +29,7 @@ def buscar_tabela_selic():
         response = requests.get(url)
         response.raise_for_status()
         # Usa header=3 conforme pedido
-        tables = pd.read_html(response.text, header=3)
+        tables = pd.read_html(response.text, header=0)
         selic_df = tables[0]
 
         # Ajusta o nome da primeira coluna para facilitar a busca

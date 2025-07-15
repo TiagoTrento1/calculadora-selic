@@ -63,7 +63,7 @@ if st.button("Calcular SELIC"):
 
             if pd.notnull(taxa):
                 valor_corrigido = valor_digitado * taxa
-                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa:.2f} (equivalente a {(taxa - 1) * 100:.2f}%)")
+                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa * 100:.2f}%")
                 st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
             else:
                 st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")

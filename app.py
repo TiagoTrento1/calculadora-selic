@@ -38,32 +38,37 @@ def buscar_tabela_selic():
 # --- Botão de Cálculo ---
 if st.button("Calcular SELIC"):
     selic_df = buscar_tabela_selic()
-    
+
     if selic_df is not None:
         mes_procurado = data_selecionada.month
         ano_procurado = data_selecionada.year
 
-        taxa_selic_encontrada = 0.0
+        # Padronizar colunas como string para evitar erros
+        selic_df.columns = selic_df.columns.astype(str)
 
-        for index, row in selic_df.iterrows():
-            coluna_mes_ano = str(row.iloc[0])
+        # Converter ano da primeira coluna
+        try:
+            selic_df.iloc[:,0] = selic_df.iloc[:,0].astype(int)
+        except:
+            pass
 
-            if isinstance(coluna_mes_ano, str) and '/' in coluna_mes_ano:
-                try:
-                    m, a = map(int, coluna_mes_ano.split('/'))
-                    if m == mes_procurado and a == ano_procurado:
-                        taxa_str = str(row.iloc[-1]).replace(',', '.').strip()
-                        taxa_selic_encontrada = float(taxa_str)
-                        break
-                except:
-                    continue
+        linha_ano = selic_df[selic_df.iloc[:,0] == ano_procurado]
 
-        if taxa_selic_encontrada > 0:
-            resultado = valor_digitado * (taxa_selic_encontrada / 100)
-            st.success(f"**Taxa SELIC Acumulada ({data_selecionada.strftime('%m/%Y')}):** {taxa_selic_encontrada:.2f}%")
-            st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
+        if not linha_ano.empty:
+            nome_mes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][mes_procurado-1]
+
+            try:
+                taxa_selic_str = linha_ano.iloc[0][nome_mes]
+                taxa_selic_encontrada = float(str(taxa_selic_str).replace(',','.'))
+
+                resultado = valor_digitado * (taxa_selic_encontrada / 100)
+
+                st.success(f"**Taxa SELIC Acumulada ({nome_mes}/{ano_procurado}):** {taxa_selic_encontrada:.2f}%")
+                st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
+
+            except Exception as e:
+                st.warning(f"Não foi possível encontrar ou converter a taxa SELIC para {nome_mes}/{ano_procurado}.")
         else:
-            st.warning(f"Não foi possível encontrar a taxa SELIC para {data_selecionada.strftime('%m/%Y')}.")
+            st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
     else:
         st.error("Não foi possível recuperar a tabela SELIC.")
-

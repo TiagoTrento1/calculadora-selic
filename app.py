@@ -28,7 +28,7 @@ def buscar_tabela_id(url, tabela_id):
         tabela_html = soup.find('table', id=tabela_id)
         if tabela_html:
             # Lê a tabela html para DataFrame, usando pandas
-            tabela = pd.read_html(str(tabela_html), header=1)[0]  # header=4 conforme você indicou
+            tabela = pd.read_html(str(tabela_html), header=0)[0]  # header=4 conforme você indicou
             return tabela
         else:
             st.error(f"Tabela com id '{tabela_id}' não encontrada na página.")

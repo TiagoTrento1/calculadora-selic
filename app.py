@@ -25,36 +25,30 @@ data_selecionada = st.date_input(
 
 def buscar_tabela_selic():
     """Busca e retorna a tabela SELIC acumulada"""
-    url = 'https://www.sef.sc.gov.br/servicos/juro-selic'
+    url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
+        response = requests.get(url)
+        response.raise_for_status()
         tables = pd.read_html(url)
-        df = tables[3]  # Tabela acumulada
+        
+        # Seleciona a tabela de acumulados (índice 1)
+        df_acumulado = tables[3]
+        print(df_acumulado)
+        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
+        df = df.dropna(subset=['Ano'])
+        df['Ano'] = df['Ano'].astype(int)
 
-        df = df.replace(',', '.', regex=True)
-        df.iloc[:, 1:] = df.iloc[:, 1:].astype(float)
+        # Converte vírgulas para ponto e transforma em decimal
+        for mes in df.columns[1:]:
+            df[mes] = df[mes].astype(str).str.replace(',', '.')
+            df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100
+
         return df
     except Exception as e:
         st.error(f"Erro ao buscar ou processar a tabela SELIC: {e}")
         return None
-
-def calcular_valor_corrigido(df, ano, mes, valor_base):
-    mes_abrev = mes.capitalize()[:3]
-    if mes_abrev not in df.columns:
-        st.error("Mês inválido.")
-        return None, None
-
-    linha_ano = df[df['Ano/Mês'] == ano]
-    if linha_ano.empty:
-        st.error(f"Ano {ano} não encontrado na tabela SELIC.")
-        return None, None
-
-    taxa = linha_ano[mes_abrev].values[0]
-    if pd.isnull(taxa):
-        st.warning(f"Taxa SELIC para {mes_abrev}/{ano} não disponível.")
-        return None, None
-
-    valor_corrigido = valor_base * (1 + taxa / 100)
-    return taxa, valor_corrigido
 
 if st.button("Calcular SELIC"):
     selic_df = buscar_tabela_selic()
@@ -64,12 +58,23 @@ if st.button("Calcular SELIC"):
         st.dataframe(selic_df)
 
         ano_procurado = data_selecionada.year
-        mes_procurado = data_selecionada.strftime('%B')
+        mes_procurado = data_selecionada.month
+        nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 
+                    'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
 
-        taxa, valor_corrigido = calcular_valor_corrigido(
-            selic_df, ano_procurado, mes_procurado, valor_digitado
-        )
+        linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
 
-        if taxa is not None:
-            st.success(f"Taxa SELIC acumulada em {mes_procurado[:3]}/{ano_procurado}: {taxa:.2f}%")
-            st.success(f"Valor corrigido: R$ {valor_corrigido:,.2f}".replace('.', ','))
+        if not linha_ano.empty:
+            taxa = linha_ano.iloc[0][nome_mes]
+
+            if pd.notnull(taxa):
+                valor_corrigido = valor_digitado * (1 + taxa)
+                taxa_formatada = f"{taxa * 100:,.2f}".replace('.', ',')
+                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}%")
+                st.success(f"Valor corrigido: R$ {valor_corrigido:,.2f}".replace('.', ','))
+            else:
+                st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")
+        else:
+            st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
+    else:
+        st.error("Falha ao recuperar a tabela SELIC.")

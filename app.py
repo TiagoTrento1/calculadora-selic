@@ -1,10 +1,6 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
 import pandas as pd
+import requests
 from datetime import datetime
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
@@ -12,6 +8,7 @@ st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 st.title("💰 Calculadora SELIC Acumulada")
 st.markdown("Insira um valor e selecione o mês/ano para calcular o valor com a taxa SELIC acumulada do site da SEF/SC.")
 
+# --- Entrada de Dados ---
 valor_digitado = st.number_input(
     "Digite o valor a ser calculado (Ex: 1000.00)",
     min_value=0.01,
@@ -26,50 +23,47 @@ data_selecionada = st.date_input(
     max_value=datetime.now().date()
 )
 
-if st.button("Calcular SELIC"):
-    st.info("Buscando taxa SELIC... Isso pode levar alguns segundos.")
-
+def buscar_tabela_selic():
+    """Busca a tabela SELIC acumulada do site da SEF/SC"""
+    url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
+        response = requests.get(url)
+        response.raise_for_status()
+        tables = pd.read_html(response.text)
+        return tables[0]  # Supondo que a tabela desejada é a primeira
+    except Exception as e:
+        st.error(f"Erro ao buscar a tabela SELIC: {e}")
+        return None
 
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-
-        url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
-        driver.get(url)
-
-        table_element = driver.find_element(By.XPATH, "//table[contains(@class, 'gridStyle')]")
-        table_html = table_element.get_attribute('outerHTML')
-        selic_df = pd.read_html(table_html)[0]
-
-        driver.quit()
-
+# --- Botão de Cálculo ---
+if st.button("Calcular SELIC"):
+    selic_df = buscar_tabela_selic()
+    
+    if selic_df is not None:
         mes_procurado = data_selecionada.month
         ano_procurado = data_selecionada.year
 
-        meses_abreviados = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-                            'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        nome_mes = meses_abreviados[mes_procurado - 1]
+        taxa_selic_encontrada = 0.0
 
-        if not selic_df.empty:
-            linha_ano = selic_df[selic_df.iloc[:, 0] == ano_procurado]
+        for index, row in selic_df.iterrows():
+            coluna_mes_ano = str(row.iloc[0])
 
-            if not linha_ano.empty and nome_mes in selic_df.columns:
-                taxa_selic_encontrada = linha_ano[nome_mes].values[0]
-                taxa_selic_encontrada = float(str(taxa_selic_encontrada).replace(',', '.'))
+            if isinstance(coluna_mes_ano, str) and '/' in coluna_mes_ano:
+                try:
+                    m, a = map(int, coluna_mes_ano.split('/'))
+                    if m == mes_procurado and a == ano_procurado:
+                        taxa_str = str(row.iloc[-1]).replace(',', '.').strip()
+                        taxa_selic_encontrada = float(taxa_str)
+                        break
+                except:
+                    continue
 
-                resultado = valor_digitado * (taxa_selic_encontrada / 100)
-
-                st.success(f"**Taxa SELIC Acumulada ({nome_mes}/{ano_procurado}):** {taxa_selic_encontrada:.2f}%")
-                st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
-            else:
-                st.warning(f"Não foi possível encontrar a taxa SELIC para {nome_mes}/{ano_procurado}.")
+        if taxa_selic_encontrada > 0:
+            resultado = valor_digitado * (taxa_selic_encontrada / 100)
+            st.success(f"**Taxa SELIC Acumulada ({data_selecionada.strftime('%m/%Y')}):** {taxa_selic_encontrada:.2f}%")
+            st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
         else:
-            st.error("Tabela SELIC não encontrada ou vazia.")
+            st.warning(f"Não foi possível encontrar a taxa SELIC para {data_selecionada.strftime('%m/%Y')}.")
+    else:
+        st.error("Não foi possível recuperar a tabela SELIC.")
 
-    except Exception as e:
-        st.error(f"Ocorreu um erro ao buscar a taxa SELIC: {e}")

@@ -2,7 +2,6 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import pandas as pd # Para facilitar a leitura da tabela
 from datetime import datetime
@@ -46,7 +45,6 @@ if st.button("Calcular SELIC"):
             # Em ambientes como Streamlit Community Cloud, o driver pode já estar disponível
             # ou você pode precisar de uma configuração mais específica para o PATH.
             # Para local, ChromeDriverManager() é ótimo.
-            service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
 
             url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"

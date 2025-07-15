@@ -78,6 +78,6 @@ if st.button("Carregar tabela SELIC acumulada"):
         taxa = processar_tabela(tabela_acumulada, data_selecionada)
         if taxa is not None:
             valor_corrigido = valor_digitado * (1 + taxa)
-            taxa_formatada = f"{taxa * 100:,.2f}%".replace('.', ',')
+            taxa_formatada = f"{taxa:,.2f}%".replace('.', ',')
             st.success(f"Taxa SELIC acumulada em {data_selecionada.strftime('%m/%Y')}: {taxa_formatada}")
             st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")

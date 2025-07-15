@@ -30,15 +30,15 @@ def buscar_tabela_selic():
         response = requests.get(url)
         response.raise_for_status()
         tables = pd.read_html(response.text, header=3)
-        df = tables[0]
+        df = tables[1]  # Seleciona a segunda tabela (índice 1), que é a acumulada
         df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
         df = df.dropna(subset=['Ano'])
         df['Ano'] = df['Ano'].astype(int)
 
-        # Aqui NÃO divide por 100 porque a tabela já vem em percentual
+        # Divide por 100 para transformar percentual em decimal
         for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
-            df[mes] = pd.to_numeric(df[mes], errors='coerce')
+            df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100
 
         return df
     except Exception as e:
@@ -62,10 +62,9 @@ if st.button("Calcular SELIC"):
             taxa = linha_ano.iloc[0][nome_mes]
 
             if pd.notnull(taxa):
-                taxa_decimal = taxa / 100  # converte de percentual para decimal
-                valor_corrigido = valor_digitado * (1 + taxa_decimal)
-                # Formata a taxa com vírgula e 2 casas decimais
-                taxa_formatada = f"{taxa:,.2f}%".replace('.', ',')
+                valor_corrigido = valor_digitado * (1 + taxa)
+                # Multiplica por 100 para exibir percentual e formata com vírgula
+                taxa_formatada = f"{taxa * 100:,.2f}%".replace('.', ',')
                 st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}")
                 st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
             else:

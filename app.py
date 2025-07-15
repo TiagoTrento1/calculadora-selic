@@ -29,7 +29,7 @@ def buscar_tabela_selic():
     try:
         response = requests.get(url)
         response.raise_for_status()
-        tables = pd.read_html(response.text, header=4)
+        tables = pd.read_html(response.text, header=3)
         df = tables[1]  # Seleciona a segunda tabela (índice 1), que é a acumulada
         df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')

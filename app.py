@@ -46,6 +46,15 @@ def try_float(x):
 if st.button("Calcular SELIC"):
     dados = buscar_tabela_selic()
 
+    if st.button("Ver colunas da tabela SELIC"):
+    dados = buscar_tabela_selic()
+    if dados is not None:
+        st.write("Colunas da tabela:", dados.columns.tolist())
+        st.write("Primeiras linhas da tabela:", dados.head())
+    else:
+        st.error("Não foi possível recuperar a tabela SELIC.")
+
+
     if dados is not None:
         # Converter todos os valores da tabela (exceto coluna "Ano/Mês") para float, tratando erros
         # A coluna 'Ano/Mês' é a primeira e contém os anos, as outras colunas são meses

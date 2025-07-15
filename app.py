@@ -1,4 +1,3 @@
-insira neste codigo
 import streamlit as st
 import pandas as pd
 import requests
@@ -26,24 +25,14 @@ data_selecionada = st.date_input(
 
 def buscar_tabela_selic():
     """Busca e retorna a tabela SELIC acumulada"""
-    url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
+    url = "https://www.sef.sc.gov.br/servicos/juro-selic"
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        tables = pd.read_html(response.text, header=3)
+        tables = pd.read_html(url, thousands='.', decimal=',')
+        df = tables[3]  # A quarta tabela da página corresponde à SELIC acumulada
         
-        # Seleciona a tabela de acumulados (índice 1)
-        df = tables[0]
-        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
-        df = df.dropna(subset=['Ano'])
-        df['Ano'] = df['Ano'].astype(int)
-
-        # Converte vírgulas para ponto e transforma em decimal
-        for mes in df.columns[1:]:
-            df[mes] = df[mes].astype(str).str.replace(',', '.')
-            df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100
+        # Substitui vírgulas por ponto e converte para float todas as colunas exceto 'Ano/Mês'
+        for col in df.columns[1:]:
+            df[col] = df[col].astype(str).str.replace(',', '.').astype(float)
 
         return df
     except Exception as e:
@@ -62,16 +51,17 @@ if st.button("Calcular SELIC"):
         nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 
                     'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
 
-        linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
+        linha_ano = selic_df[selic_df['Ano/Mês'] == ano_procurado]
 
         if not linha_ano.empty:
             taxa = linha_ano.iloc[0][nome_mes]
 
             if pd.notnull(taxa):
-                valor_corrigido = valor_digitado * (1 + taxa)
-                taxa_formatada = f"{taxa * 100:,.2f}".replace('.', ',')
+                valor_corrigido = valor_digitado * (1 + (taxa / 100))
+                taxa_formatada = f"{taxa:,.2f}".replace('.', ',')
+                valor_formatado = f"{valor_corrigido:,.2f}".replace('.', ',')
                 st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}%")
-                st.success(f"Valor corrigido: R$ {valor_corrigido:,.2f}".replace('.', ','))
+                st.success(f"Valor corrigido: R$ {valor_formatado}")
             else:
                 st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")
         else:

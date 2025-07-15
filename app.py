@@ -6,8 +6,9 @@ from datetime import datetime
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 
 st.title("💰 Calculadora SELIC Acumulada")
-st.markdown("Insira um valor e selecione o mês/ano para calcular o valor com a taxa SELIC acumulada do site da SEF/SC.")
+st.markdown("Insira um valor e selecione o mês/ano para calcular o valor com a taxa SELIC acumulada da SEF/SC.")
 
+# --- Entrada de Dados ---
 valor_digitado = st.number_input(
     "Digite o valor a ser calculado (Ex: 1000.00)",
     min_value=0.01,
@@ -23,42 +24,50 @@ data_selecionada = st.date_input(
 )
 
 def buscar_tabela_selic():
+    """Busca e retorna a tabela SELIC acumulada"""
     url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
         response = requests.get(url)
         response.raise_for_status()
-        tables = pd.read_html(response.text, header=3)
+        tables = pd.read_html(response.text)
         df = tables[0]
-        df.rename(columns={df.columns[0]: "Ano"}, inplace=True)
+        df.columns = ['Ano'] + ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
+        df = df.dropna(subset=['Ano'])  # Remove linhas onde o ano não pôde ser convertido
+        df['Ano'] = df['Ano'].astype(int)
+
+        # Converter todos os valores restantes para float
+        for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
+            df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100  # Convertendo e ajustando a taxa (dividindo por 100)
+        
         return df
     except Exception as e:
-        st.error(f"Erro ao buscar a tabela SELIC: {e}")
+        st.error(f"Erro ao buscar ou processar a tabela SELIC: {e}")
         return None
 
 if st.button("Calcular SELIC"):
     selic_df = buscar_tabela_selic()
 
     if selic_df is not None:
-        ano_procurado = data_selecionada.year
-        mes_procurado_idx = data_selecionada.month - 1
-        meses_portugues = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        mes_procurado = meses_portugues[mes_procurado_idx]
+        st.subheader("Pré-visualização da Tabela SELIC carregada:")
+        st.dataframe(selic_df)
 
-        linha_ano = selic_df[selic_df["Ano"] == ano_procurado]
+        ano_procurado = data_selecionada.year
+        mes_procurado = data_selecionada.month
+        nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
+
+        linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
+
         if not linha_ano.empty:
-            if mes_procurado in linha_ano.columns:
-                taxa_valor = linha_ano[mes_procurado].values[0]
-                try:
-                    taxa_selic = float(str(taxa_valor).replace(',', '.')) / 100
-                    resultado = valor_digitado * (taxa_selic / 100)
-                    st.success(f"**Taxa SELIC Acumulada ({mes_procurado}/{ano_procurado}):** {taxa_selic:.4f}%")
-                    st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
-                except Exception as e:
-                    st.error(f"Erro ao converter taxa SELIC: {e}")
+            taxa = linha_ano.iloc[0][nome_mes]
+
+            if pd.notnull(taxa):
+                valor_corrigido = valor_digitado * (1 + taxa)
+                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa*100:.2f}%")
+                st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
             else:
-                st.warning(f"O mês '{mes_procurado}' não foi encontrado na tabela SELIC.")
+                st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")
         else:
             st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
     else:
-        st.error("Não foi possível recuperar a tabela SELIC.")
+        st.error("Falha ao recuperar a tabela SELIC.")

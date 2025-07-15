@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-st.title("Calculadora SELIC Acumulada (tabela pelo id)")
+st.title("Calculadora SELIC Acumulada")
 
 valor_digitado = st.number_input(
     "Digite o valor a ser calculado (Ex: 1000.00)",

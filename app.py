@@ -1,75 +1,55 @@
 import streamlit as st
 import pandas as pd
 import requests
-from datetime import datetime
-
-st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
-
-st.title("💰 Calculadora SELIC Acumulada")
-st.markdown("Insira um valor e selecione o mês/ano para calcular o valor com a taxa SELIC acumulada da SEF/SC.")
-
-# --- Entrada de Dados ---
-valor_digitado = st.number_input(
-    "Digite o valor a ser calculado (Ex: 1000.00)",
-    min_value=0.01,
-    format="%.2f",
-    value=1000.00
-)
-
-data_selecionada = st.date_input(
-    "Selecione o mês e ano para o cálculo:",
-    value=datetime.now().date(),
-    min_value=datetime(2000, 1, 1).date(),
-    max_value=datetime.now().date()
-)
 
 def buscar_tabela_selic():
-    """Busca e retorna a tabela SELIC acumulada"""
     url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
         response = requests.get(url)
         response.raise_for_status()
         tables = pd.read_html(response.text, header=3)
-        df = tables[1]  # Seleciona a segunda tabela (índice 1), que é a acumulada
-        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
-        df = df.dropna(subset=['Ano'])
-        df['Ano'] = df['Ano'].astype(int)
 
-        # Divide por 100 para transformar percentual em decimal
+        # A tabela acumulada geralmente está no índice 2 (confirme no seu caso)
+        df = tables[2]
+
+        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce').astype(int)
         for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
             df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100
 
         return df
+
     except Exception as e:
         st.error(f"Erro ao buscar ou processar a tabela SELIC: {e}")
         return None
 
-if st.button("Calcular SELIC"):
-    selic_df = buscar_tabela_selic()
+def main():
+    st.title("Correção Monetária com SELIC Acumulada")
 
-    if selic_df is not None:
-        st.subheader("Pré-visualização da Tabela SELIC carregada:")
-        st.dataframe(selic_df)
+    df_selic = buscar_tabela_selic()
+    if df_selic is None:
+        st.stop()
 
-        ano_procurado = data_selecionada.year
-        mes_procurado = data_selecionada.month
-        nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
+    anos = df_selic['Ano'].dropna().astype(int).tolist()
+    ano_escolhido = st.selectbox("Ano", anos)
 
-        linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
+    meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    mes_escolhido = st.selectbox("Mês", meses)
 
-        if not linha_ano.empty:
-            taxa = linha_ano.iloc[0][nome_mes]
+    valor_original = st.number_input("Valor Original (R$)", min_value=0.0, format="%.2f")
 
-            if pd.notnull(taxa):
-                valor_corrigido = valor_digitado * (1 + taxa)
-                # Multiplica por 100 para exibir percentual e formata com vírgula
-                taxa_formatada = f"{taxa * 100:,.2f}%".replace('.', ',')
-                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}")
-                st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
-            else:
-                st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")
+    if st.button("Calcular Valor Corrigido"):
+        taxa = df_selic.loc[df_selic['Ano'] == ano_escolhido, mes_escolhido].values
+        if len(taxa) == 0 or pd.isna(taxa[0]):
+            st.error("Taxa SELIC para esse período não encontrada.")
         else:
-            st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
-    else:
-        st.error("Falha ao recuperar a tabela SELIC.")
+            taxa = taxa[0]
+            valor_corrigido = valor_original * (1 + taxa)
+            st.write(f"Taxa acumulada até {mes_escolhido}/{ano_escolhido}: {taxa*100:.2f}%")
+            st.write(f"Valor corrigido: R$ {valor_corrigido:.2f}")
+
+    with st.expander("Tabela SELIC Acumulada"):
+        st.dataframe(df_selic.style.format("{:.4f}"))
+
+if __name__ == "__main__":
+    main()

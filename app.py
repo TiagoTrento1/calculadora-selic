@@ -55,7 +55,7 @@ if st.button("Carregar tabela SELIC acumulada"):
             tabela['Ano'] = tabela['Ano'].astype(int)
 
             for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
-                tabela[mes] = pd.to_numeric(tabela[mes], errors='coerce') / 100
+                tabela[mes] = pd.to_numeric(tabela[mes], errors='coerce')
 
             ano_procurado = mes_ano.year
             mes_procurado = mes_ano.month

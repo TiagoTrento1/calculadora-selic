@@ -1,11 +1,12 @@
 import streamlit as st
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service # Mantenha esta importação
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-# from webdriver_manager.chrome import ChromeDriverManager # Remova esta linha
 from selenium.webdriver.common.by import By
 import pandas as pd
 from datetime import datetime
+from selenium.webdriver.support.ui import WebDriverWait # Adicionar para esperar elementos
+from selenium.webdriver.support import expected_conditions as EC # Adicionar para esperar elementos
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 
@@ -23,8 +24,8 @@ valor_digitado = st.number_input(
 data_selecionada = st.date_input(
     "Selecione o mês e ano para o cálculo:",
     value=datetime.now().date(),
-    min_value=datetime(2000, 1, 1).date(), # Limite inferior razoável
-    max_value=datetime.now().date() # Não permitir data futura
+    min_value=datetime(2000, 1, 1).date(),
+    max_value=datetime.now().date()
 )
 
 # --- Botão de Cálculo ---
@@ -36,38 +37,103 @@ if st.button("Calcular SELIC"):
 
         driver = None # Inicializa driver como None
         try:
-            # Configurar as opções do Chrome para rodar em modo headless
+            # Configurar as opções do Chrome para rodar em modo headless no Streamlit Cloud
             chrome_options = Options()
             chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox") # Necessário em alguns ambientes de nuvem/Linux
-            chrome_options.add_argument("--disable-dev-shm-usage") # Otimização para ambientes Docker/Linux
-            chrome_options.add_argument("--disable-gpu") # Desabilitar GPU
-            chrome_options.add_argument("--window-size=1920,1080") # Boa prática para headless
-
-            # *** IMPORTANTE: Caminho do Chromedriver no Streamlit Community Cloud ***
-            # O Streamlit Community Cloud já tem o Chromium e seu driver em um local específico.
-            # Você precisa apontar diretamente para ele.
-            chrome_options.binary_location = "/usr/bin/chromium-browser" # Aponta para o executável do Chromium
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
             
-            # *** CORREÇÃO AQUI: Instanciar o objeto Service antes de usá-lo ***
-            service = Service("/usr/bin/chromedriver") # Aponta para o Chromedriver
+            # *** SOLUÇÃO CHAVE AQUI ***
+            # Aponta diretamente para o executável do Chromium no ambiente do Streamlit Cloud.
+            # O Chromedriver geralmente "acompanha" o Chromium ou é encontrado se este for especificado.
+            chrome_options.binary_location = "/usr/bin/chromium-browser" 
+            
+            # Tentar iniciar o driver sem especificar o service.executable_path explicitamente no Service()
+            # Se o binary_location for definido, o Selenium muitas vezes infere o driver.
+            # ou, podemos passar o service_log_path para depuração.
+            
+            # A forma mais direta e que geralmente funciona para ambientes como o Streamlit Cloud
+            # é omitir o Service() e passar o executable_path diretamente nas options do Chrome.
+            # No entanto, com as versões mais recentes do Selenium, usar o Service é o padrão.
+            # Vamos tentar a combinação de Service com o caminho do Chromedriver e o binary_location para Chromium.
+
+            # O erro "Unable to obtain driver" pode ocorrer se o Chromedriver não estiver em /usr/bin/chromedriver.
+            # No Streamlit Cloud, o Chromedriver pode estar em /usr/local/bin/chromedriver ou ser gerenciado de outra forma.
+            # A forma mais robusta é usar o `executable_path` dentro das `options` para o Chromedriver
+            # E o `binary_location` para o Chromium.
+
+            # Tentativa 1: Especificar o driver via Service (o que fizemos antes)
+            # service = Service("/usr/bin/chromedriver") # O erro pode estar aqui se o Chromedriver não estiver EXATAMENTE nesse local
+            # driver = webdriver.Chrome(service=service, options=chrome_options)
+
+            # Tentativa 2 (MAIS ROBUSTA): Tentar sem `webdriver_manager` e sem um `Service` explícito para o driver,
+            # deixando o Selenium inferir, ou especificar o caminho do driver nas opções.
+            # Como você já está sem webdriver_manager, vamos tentar uma abordagem mais direta.
+            
+            # Vamos tentar passar o caminho do chromedriver diretamente nas opções para compatibilidade
+            # com ambientes onde o driver e o binário do browser podem estar em locais diferentes ou
+            # o Service() não está inferindo corretamente.
+            
+            # ATENÇÃO: Se /usr/bin/chromedriver ainda não funcionar, teremos que investigar os logs
+            # do Streamlit Community Cloud para ver onde o chromedriver está de fato.
+            # Para o Streamlit Community Cloud, a forma mais resiliente é usar apenas o `binary_location`
+            # e deixar o Selenium tentar encontrar o driver automaticamente, ou usar uma abordagem como
+            # `selenium-wire` que pode ter seu próprio Chromedriver embutido para ambientes Docker.
+            
+            # No entanto, para persistir com a abordagem atual, vamos tentar o seguinte:
+            # Adicionar o caminho do chromedriver diretamente nas opções, pois o Service pode estar
+            # buscando de um PATH diferente.
+            
+            # A forma mais recomendada agora é instanciar o Service e passar o caminho do chromedriver.
+            # Se "/usr/bin/chromedriver" não funcionar, o driver pode estar em "/usr/local/bin/chromedriver"
+            # ou o Streamlit Cloud tem um caminho de driver diferente.
+            
+            # Vamos garantir que a importação de Service esteja correta, o que já está.
+            # E que a instância de Service esteja no lugar certo, o que também já está.
+            
+            # O erro "Unable to obtain driver for chrome" sugere que o Selenium NÃO CONSEGUE SEQUER INICIAR
+            # o chromedriver no PATH que você deu.
+            # Isso é quase sempre um problema de PERMISSÕES ou o EXECUTÁVEL NÃO EXISTE NO CAMINHO.
+            
+            # Vamos forçar o caminho do CHROMEDRIVER e também do BINÁRIO do CHROME.
+            # O Streamlit Community Cloud tem um comportamento específico para isso.
+            # Tente esta combinação, que costuma resolver:
+
+            # Definir o caminho para o executável do Chromedriver no ambiente do Streamlit Cloud
+            # Este é o caminho padrão onde o Chromedriver costuma estar em sistemas Linux/Docker
+            # e onde o Streamlit Community Cloud o coloca.
+            CHROMEDRIVER_PATH = "/usr/bin/chromedriver" 
+            
+            # Definir o caminho para o binário do Chromium/Chrome no ambiente do Streamlit Cloud
+            # Este é o navegador que o Chromedriver vai controlar.
+            CHROME_BINARY_PATH = "/usr/bin/chromium-browser" # Este é o mais comum no Streamlit Cloud
+
+            chrome_options.binary_location = CHROME_BINARY_PATH
+            
+            # A partir do Selenium 4.6+, a forma recomendada de especificar o driver é via Service.
+            # O erro "Unable to obtain driver" vem se o Service NÃO consegue achar o driver nesse caminho.
+            # Isso geralmente significa que o arquivo NÃO EXISTE OU NÃO TEM PERMISSÃO DE EXECUÇÃO.
+            
+            # Vamos garantir que o service seja criado com o caminho correto.
+            service = Service(CHROMEDRIVER_PATH) 
+            
+            # Tente também adicionar argumentos para logs do Chromedriver, pode ajudar na depuração
+            # service.service_args = ['--verbose', '--log-path=/tmp/chromedriver.log'] # Útil para depurar
 
             driver = webdriver.Chrome(service=service, options=chrome_options)
+
+            # Aumentar o tempo de espera implícita para garantir que elementos carreguem
+            driver.implicitly_wait(10) # Espera até 10 segundos para encontrar elementos
 
             url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
             driver.get(url)
 
-            # ... (o resto do seu código para extrair a tabela e fazer o cálculo) ...
-            # Esperar que a tabela esteja visível (ajuste o seletor se necessário)
-            # Pode ser necessário usar WebDriverWait para maior robustez
-            # from selenium.webdriver.support.ui import WebDriverWait
-            # from selenium.webdriver.support import expected_conditions as EC
-            # WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "table.gridStyle")))
-
-            # Encontrar a tabela de juros SELIC acumulados
-            # Inspecione o HTML do site para encontrar o seletor exato da tabela
-            # Exemplo: 'table.gridStyle' ou 'table#ctl00_contentPlaceHolder_GridView1'
-            table_element = driver.find_element(By.XPATH, "//table[contains(@class, 'gridStyle')]") # Ajuste o XPath/CSS Selector
+            # Usar WebDriverWait para esperar a tabela carregar, é mais robusto que implicitly_wait para elementos específicos
+            # O seletor abaixo é um PALPITE. Você DEVE inspecionar o site e verificar o seletor da tabela exata!
+            wait = WebDriverWait(driver, 20) # Espera até 20 segundos
+            table_element = wait.until(EC.presence_of_element_located((By.XPATH, "//table[contains(@class, 'gridStyle')]")))
 
             # Extrair o HTML da tabela
             table_html = table_element.get_attribute('outerHTML')
@@ -79,6 +145,13 @@ if st.button("Calcular SELIC"):
             # Supondo que a tabela correta seja a primeira encontrada ou uma específica
             # Você precisará verificar a estrutura da tabela no site para saber o índice correto.
             selic_df = dfs[0] # Ou dfs[1], dfs[2] dependendo de quantas tabelas existam na página.
+
+            # ... (o resto do seu código para filtrar e calcular) ...
+            
+            # Para fins de depuração, mostre o DataFrame completo
+            # st.write("DataFrame da SELIC carregado:")
+            # st.dataframe(selic_df)
+
 
             # Normalizar nomes das colunas e limpar dados se necessário
             # Ex: selic_df.columns = ['Mês/Ano', 'Taxa Mensal', ..., 'Acumulada']
@@ -103,8 +176,13 @@ if st.button("Calcular SELIC"):
                     if m == mes_procurado and a == ano_procurado:
                         # Assumindo a coluna da taxa acumulada é a última (ou índice 4/5)
                         # Verifique o nome real da coluna ou o índice no DataFrame
-                        taxa_str = str(row.iloc[-1]).replace(',', '.').strip() # Última coluna, substitui ',' por '.'
-                        taxa_selic_encontrada = float(taxa_str)
+                        # Adicione um tratamento de erro para a conversão de float
+                        try:
+                            taxa_str = str(row.iloc[-1]).replace(',', '.').strip() # Última coluna, substitui ',' por '.'
+                            taxa_selic_encontrada = float(taxa_str)
+                        except ValueError:
+                            st.warning(f"Não foi possível converter a taxa '{taxa_str}' para número na linha {index}. Pulando.")
+                            continue # Pula para a próxima linha
                         break
             
             if taxa_selic_encontrada > 0:
@@ -114,10 +192,10 @@ if st.button("Calcular SELIC"):
             else:
                 st.warning(f"Não foi possível encontrar a taxa SELIC para {data_selecionada.strftime('%m/%Y')}.")
 
-
         except Exception as e:
             st.error(f"Ocorreu um erro ao buscar a taxa SELIC: {e}")
-            st.error("Verifique se o site está acessível ou se o seletor da tabela está correto.")
+            st.error("Verifique os detalhes do erro nos logs do Streamlit Cloud.")
+            # st.exception(e) # Para exibir o traceback completo no Streamlit app (útil para depuração)
         finally:
             if driver:
                 driver.quit() # Fechar o navegador ao finalizar

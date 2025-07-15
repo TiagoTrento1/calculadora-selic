@@ -1,16 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import requests
-import subprocess
-import sys
 
-# --- Garantir que o html5lib esteja instalado ---
+# Apenas tenta importar html5lib para garantir que esteja instalado
 try:
     import html5lib
 except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "html5lib"])
-    import html5lib
+    st.error("A biblioteca 'html5lib' não está instalada. Por favor, instale-a executando: pip install html5lib")
+    st.stop()
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 
@@ -34,7 +31,7 @@ data_selecionada = st.date_input(
 
 def buscar_tabela_selic():
     """Busca e retorna a tabela SELIC acumulada diretamente da página SEF/SC"""
-    url = 'https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx'
+    url = 'https://www.sef.sc.gov.br/servicos/juro-selic'
     try:
         tables = pd.read_html(url)
         df = tables[3]  # tabela acumulada é a 4ª no HTML (índice 3)

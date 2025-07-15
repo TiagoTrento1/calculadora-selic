@@ -30,18 +30,14 @@ def buscar_tabela_selic():
         response = requests.get(url)
         response.raise_for_status()
         tables = pd.read_html(response.text, header=3)
-        
-        # Seleciona a tabela de acumulados (índice 1)
-        df = tables[1]
-        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        df = tables[1]  # Seleciona a segunda tabela (índice 1), que é a acumulada
+        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
         df = df.dropna(subset=['Ano'])
         df['Ano'] = df['Ano'].astype(int)
 
-        # Converte vírgulas para ponto e transforma em decimal
-        for mes in df.columns[1:]:
-            df[mes] = df[mes].astype(str).str.replace(',', '.')
+        # Divide por 100 para transformar percentual em decimal
+        for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
             df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100
 
         return df
@@ -58,8 +54,7 @@ if st.button("Calcular SELIC"):
 
         ano_procurado = data_selecionada.year
         mes_procurado = data_selecionada.month
-        nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 
-                    'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
+        nome_mes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][mes_procurado - 1]
 
         linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
 
@@ -68,9 +63,10 @@ if st.button("Calcular SELIC"):
 
             if pd.notnull(taxa):
                 valor_corrigido = valor_digitado * (1 + taxa)
-                taxa_formatada = f"{taxa * 100:,.2f}".replace('.', ',')
-                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}%")
-                st.success(f"Valor corrigido: R$ {valor_corrigido:,.2f}".replace('.', ','))
+                # Multiplica por 100 para exibir percentual e formata com vírgula
+                taxa_formatada = f"{taxa * 100:,.2f}%".replace('.', ',')
+                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa_formatada}")
+                st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
             else:
                 st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")
         else:

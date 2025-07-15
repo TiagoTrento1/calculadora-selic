@@ -29,16 +29,16 @@ def buscar_tabela_selic():
     try:
         response = requests.get(url)
         response.raise_for_status()
-        tables = pd.read_html(response.text)
+        tables = pd.read_html(response.text, header=3)
         df = tables[0]
-        df.columns = ['Ano'] + ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
-        df = df.dropna(subset=['Ano'])  # Remove linhas onde o ano não pôde ser convertido
+        df = df.dropna(subset=['Ano'])
         df['Ano'] = df['Ano'].astype(int)
 
-        # Converter todos os valores restantes para float
+        # Converte todas as colunas de mês para float sem dividir por 100
         for mes in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']:
-            df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100  # Convertendo e ajustando a taxa (dividindo por 100)
+            df[mes] = pd.to_numeric(df[mes], errors='coerce')
         
         return df
     except Exception as e:
@@ -62,8 +62,8 @@ if st.button("Calcular SELIC"):
             taxa = linha_ano.iloc[0][nome_mes]
 
             if pd.notnull(taxa):
-                valor_corrigido = valor_digitado * (1 + taxa)
-                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa*100:.2f}%")
+                valor_corrigido = valor_digitado * (1 + (taxa / 100))  # Corrige o valor aplicando a taxa percentual
+                st.success(f"Taxa SELIC acumulada em {nome_mes}/{ano_procurado}: {taxa:.2f}%")
                 st.success(f"Valor corrigido: R$ {valor_corrigido:.2f}")
             else:
                 st.warning(f"A taxa SELIC para {nome_mes}/{ano_procurado} não está disponível na tabela.")

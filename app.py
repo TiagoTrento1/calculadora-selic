@@ -2,14 +2,13 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-import unicodedata
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 
 st.title("💰 Calculadora SELIC Acumulada")
 st.markdown("Insira um valor e selecione o mês/ano para calcular o valor com a taxa SELIC acumulada do site da SEF/SC.")
 
-# --- Entrada de Dados ---
+# Entrada de dados
 valor_digitado = st.number_input(
     "Digite o valor a ser calculado (Ex: 1000.00)",
     min_value=0.01,
@@ -24,63 +23,54 @@ data_selecionada = st.date_input(
     max_value=datetime.now().date()
 )
 
-def limpar_texto(texto):
-    """Remove espaços, acentos e normaliza para 3 primeiras letras capitalizadas."""
-    if not isinstance(texto, str):
-        texto = str(texto)
-    texto = texto.strip()
-    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')  # Remove acentos
-    return texto[:3].capitalize()
-
 def buscar_tabela_selic():
-    """Busca a tabela SELIC acumulada do site da SEF/SC e normaliza colunas."""
     url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
         response = requests.get(url)
         response.raise_for_status()
         tables = pd.read_html(response.text)
-        selic_df = tables[0]  # Supondo que a tabela desejada é a primeira
-        
-        # Normaliza as colunas para os 3 primeiros caracteres capitalizados, sem acento e espaços
-        selic_df.columns = [limpar_texto(col) for col in selic_df.columns]
-        
-        st.write(f"Colunas normalizadas: {selic_df.columns.tolist()}")
-        
+        selic_df = tables[0]
         return selic_df
     except Exception as e:
         st.error(f"Erro ao buscar a tabela SELIC: {e}")
         return None
 
-# --- Botão de Cálculo ---
 if st.button("Calcular SELIC"):
     selic_df = buscar_tabela_selic()
-    
     if selic_df is not None:
-        mes_procurado = data_selecionada.month
-        ano_procurado = data_selecionada.year
-
-        # Mapeia número do mês para abreviação de 3 letras conforme tabela
-        meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        mes_str = meses[mes_procurado - 1]
-
-        if 'Ano' not in selic_df.columns:
-            st.error("Coluna 'Ano' não encontrada na tabela SELIC.")
-        elif mes_str not in selic_df.columns:
-            st.error(f"O mês '{mes_str}' não foi encontrado nas colunas normalizadas da tabela SELIC.")
+        # Primeiro, olhar como está a tabela
+        st.write("Tabela bruta:", selic_df)
+        
+        # A primeira coluna é "Ano/Mês"
+        # A primeira linha tem os anos (começando da segunda coluna)
+        anos = selic_df.columns[1:].tolist()
+        # A primeira coluna a partir da segunda linha tem os meses
+        meses = selic_df.iloc[:, 0].tolist()[1:]
+        
+        # Construir dataframe transposto com meses como linhas e anos como colunas
+        dados = selic_df.iloc[1:, 1:]
+        dados.index = meses
+        dados.columns = anos
+        
+        # Converter valores para float (trocar ',' por '.' e converter)
+        dados = dados.applymap(lambda x: float(str(x).replace(',', '.')))
+        
+        mes_procurado = data_selecionada.strftime('%b')  # Ex: 'Jun'
+        ano_procurado = str(data_selecionada.year)       # Ex: '2025'
+        
+        # Mapear mês para abreviação usada na tabela (abreviações em português com 3 letras)
+        meses_pt = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        mes_abrev = meses_pt[data_selecionada.month -1]
+        
+        if ano_procurado not in dados.columns:
+            st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
+        elif mes_abrev not in dados.index:
+            st.warning(f"O mês '{mes_abrev}' não foi encontrado na tabela SELIC.")
         else:
-            # Filtra a linha do ano procurado
-            linha_ano = selic_df[selic_df['Ano'] == ano_procurado]
-
-            if linha_ano.empty:
-                st.warning(f"Não foi possível encontrar o ano {ano_procurado} na tabela SELIC.")
-            else:
-                taxa_str = str(linha_ano.iloc[0][mes_str]).replace(',', '.').strip()
-                try:
-                    taxa_selic_encontrada = float(taxa_str)
-                    resultado = valor_digitado * (taxa_selic_encontrada / 100)
-                    st.success(f"**Taxa SELIC Acumulada ({mes_str}/{ano_procurado}):** {taxa_selic_encontrada:.2f}%")
-                    st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
-                except ValueError:
-                    st.error(f"Valor inválido para a taxa SELIC no mês {mes_str}/{ano_procurado}: '{taxa_str}'")
+            taxa_selic_encontrada = dados.loc[mes_abrev, ano_procurado]
+            resultado = valor_digitado * (taxa_selic_encontrada / 100)
+            
+            st.success(f"**Taxa SELIC Acumulada ({mes_abrev}/{ano_procurado}):** {taxa_selic_encontrada:.2f}%")
+            st.success(f"**Valor Calculado:** R$ {resultado:.2f}")
     else:
         st.error("Não foi possível recuperar a tabela SELIC.")

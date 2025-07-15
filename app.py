@@ -1,13 +1,7 @@
 import streamlit as st
 import pandas as pd
+import requests
 from datetime import datetime
-
-# Apenas tenta importar html5lib para garantir que esteja instalado
-try:
-    import html5lib
-except ImportError:
-    st.error("A biblioteca 'html5lib' não está instalada. Por favor, instale-a executando: pip install html5lib")
-    st.stop()
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", layout="centered")
 
@@ -30,18 +24,22 @@ data_selecionada = st.date_input(
 )
 
 def buscar_tabela_selic():
-    """Busca e retorna a tabela SELIC acumulada diretamente da página SEF/SC"""
-    url = 'https://www.sef.sc.gov.br/servicos/juro-selic'
+    """Busca e retorna a tabela SELIC acumulada"""
+    url = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
     try:
-        tables = pd.read_html(url)
-        df = tables[3]  # tabela acumulada é a 4ª no HTML (índice 3)
+        response = requests.get(url)
+        response.raise_for_status()
+        tables = pd.read_html(response.text, header=3)
         
+        # Seleciona a tabela de acumulados (índice 1)
+        df = tables[1]
         df.columns = ['Ano', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
                       'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         df['Ano'] = pd.to_numeric(df['Ano'], errors='coerce')
         df = df.dropna(subset=['Ano'])
         df['Ano'] = df['Ano'].astype(int)
 
+        # Converte vírgulas para ponto e transforma em decimal
         for mes in df.columns[1:]:
             df[mes] = df[mes].astype(str).str.replace(',', '.')
             df[mes] = pd.to_numeric(df[mes], errors='coerce') / 100

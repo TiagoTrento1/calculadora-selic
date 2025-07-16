@@ -6,20 +6,30 @@ from datetime import datetime
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", page_icon="📈", layout="centered")
 
+# Estilo customizado
 st.markdown(
     """
     <style>
-        body {background-color: #f5f5f5;}
-        .title {font-size: 2.5em; font-weight: bold; color: #003366;}
-        .subtitle {font-size: 1.2em; color: #555;}
-        .footer {text-align: center; margin-top: 50px; font-size: 0.9em; color: #777;}
-        .footer a {text-decoration: none; color: #0e76a8;}
+        .main { background-color: #f9f9f9; }
+        h1 { color: #003366; }
+        .stButton>button {
+            background-color: #003366;
+            color: white;
+            border-radius: 5px;
+            padding: 0.5em 1em;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 3em;
+        }
     </style>
     """, unsafe_allow_html=True
 )
 
-st.markdown('<div class="title">📈 Calculadora SELIC Acumulada</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Corrija valores monetários aplicando a taxa SELIC acumulada até o mês/ano selecionado.</div>', unsafe_allow_html=True)
+st.title("📈 Calculadora SELIC Acumulada")
+st.write("Corrija valores monetários aplicando a taxa SELIC acumulada até o mês/ano selecionado.")
 
 st.divider()
 
@@ -49,7 +59,7 @@ def buscar_tabela_id(url, tabela_id):
             tabela = pd.read_html(str(tabela_html), header=0)[0]
             return tabela
         else:
-            st.error(f"Tabela com id '{tabela_id}' não encontrada na página.")
+            st.error(f"Tabela com id '{tabela_id}' não encontrada.")
             return None
     except Exception as e:
         st.error(f"Erro ao buscar tabela: {e}")
@@ -96,10 +106,9 @@ if st.button("Calcular"):
 st.markdown(
     """
     <div class="footer">
-        Desenvolvido por <strong>Tiago Trento</strong>
-        <br><a href="https://www.linkedin.com/in/tiago-trento/" target="_blank">
-            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="20px" style="vertical-align:middle;margin-right:5px;">LinkedIn
-        </a>
+        Desenvolvido por <strong>Tiago Trento</strong><br>
+        <a href="https://www.linkedin.com/in/tiago-trento/" target="_blank">🔗 LinkedIn</a>
     </div>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )

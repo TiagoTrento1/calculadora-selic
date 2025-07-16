@@ -6,26 +6,54 @@ from datetime import datetime
 
 st.set_page_config(page_title="Calculadora SELIC Acumulada", page_icon="📈", layout="centered")
 
-# Estilo customizado
+# CSS customizado para botão do LinkedIn e estilo geral
 st.markdown(
     """
     <style>
-        .main { background-color: #f9f9f9; }
         h1 { color: #003366; }
+
         .stButton>button {
             background-color: #003366;
             color: white;
             border-radius: 5px;
             padding: 0.5em 1em;
         }
+
         .footer {
             text-align: center;
             font-size: 0.9em;
             color: #888;
             margin-top: 3em;
         }
+
+        .linkedin-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #0e76a8;
+            color: white !important;
+            padding: 0.5em 1em;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .linkedin-btn:hover {
+            background-color: #08475e;
+            color: white !important;
+            text-decoration: none;
+        }
+
+        .linkedin-icon {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
     </style>
-    """, unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True
 )
 
 st.title("📈 Calculadora SELIC Acumulada")
@@ -103,11 +131,17 @@ if st.button("Calcular"):
             else:
                 st.warning("Taxa SELIC não disponível para a data selecionada.")
 
+# Rodapé com botão do LinkedIn estilizado
 st.markdown(
     """
     <div class="footer">
-        Desenvolvido por <strong>Tiago Trento</strong><br>
-        <a href="https://www.linkedin.com/in/tiago-trento/" target="_blank">🔗 LinkedIn</a>
+        Desenvolvido por <strong>Tiago Trento</strong><br><br>
+        <a class="linkedin-btn" href="https://www.linkedin.com/in/tiago-trento/" target="_blank">
+            <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                <path d="M100.28 448H7.4V148.9h92.88zm-46.44-340C24.35 108 0 83.66 0 53.64a53.64 53.64 0 0 1 53.64-53.64c29.92 0 53.64 24.35 53.64 53.64 0 30.02-24.35 54.36-53.64 54.36zM447.9 448h-92.68V302.4c0-34.7-12.4-58.4-43.24-58.4-23.6 0-37.6 15.8-43.8 31.1-2.2 5.3-2.8 12.7-2.8 20.1V448h-92.8s1.2-269.7 0-297.1h92.8v42.1c12.3-19 34.3-46.1 83.5-46.1 60.9 0 106.6 39.8 106.6 125.4V448z"/>
+            </svg>
+            Meu LinkedIn
+        </a>
     </div>
     """,
     unsafe_allow_html=True

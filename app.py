@@ -57,7 +57,7 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC Acumulada")
-st.write("Corrige valores monetários aplicando a taxa SELIC acumulada do mês/ano selecionado **e somando as taxas acumuladas dos meses subsequentes** até o final do ano disponível na tabela.")
+st.write("Corrige valores monetários aplicando a taxa SELIC mensal do mês selecionado **e somando as taxas dos meses subsequentes** até o final do ano disponível na tabela.")
 
 st.divider()
 
@@ -68,170 +68,142 @@ valor_digitado = st.number_input(
     value=1000.00
 )
 
-data_limite_selecao = datetime.now().date().replace(day=1) 
+# Ajustado para permitir seleção de meses futuros no mesmo ano, até a data atual para garantir dados
+data_limite_selecao = datetime.now().date().replace(day=1) # Sempre o primeiro dia do mês atual
 
 data_selecionada = st.date_input(
     "Selecione o mês/ano INICIAL para o cálculo:",
-    value=data_limite_selecao,
-    min_value=datetime(2000, 1, 1).date(),
-    max_value=data_limite_selecao
+    value=data_limite_selecao, # Valor padrão para o primeiro dia do mês atual
+    min_value=datetime(2000, 1, 1).date(), # Começa em 2000
+    max_value=data_limite_selecao # O usuário pode selecionar até o mês atual (inclusive)
 )
 
 st.divider()
 
-# --- Função de busca da tabela mais robusta ---
-def buscar_tabela_selic(url):
+# --- Função de busca da tabela pelo ID (voltamos a usar o ID já que você o forneceu) ---
+def buscar_tabela_por_id(url, tabela_id):
     """
-    Busca a tabela de SELIC Acumulada na URL, identificando-a pelo seu cabeçalho.
+    Busca uma tabela HTML por ID em uma URL e a retorna como um DataFrame Pandas.
     """
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
+        response = requests.get(url, timeout=10) # Adiciona timeout
+        response.raise_for_status()  # Levanta um HTTPError para respostas de erro (4xx ou 5xx)
         soup = BeautifulSoup(response.text, 'html.parser')
+        tabela_html = soup.find('table', id=tabela_id)
         
-        # Encontra todas as tabelas na página
-        todas_tabelas = soup.find_all('table')
-        
-        tabela_encontrada = None
-        for tabela_html in todas_tabelas:
-            # Converte a tabela HTML para DataFrame
-            try:
-                # Tenta ler a tabela. errors='ignore' evita quebras se a tabela for inválida
-                df_temp = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.', errors='ignore')
-                
-                if df_temp and isinstance(df_temp, list) and len(df_temp) > 0:
-                    df = df_temp[0]
-                    # Verifica se o DataFrame contém colunas esperadas da tabela de acumulados
-                    # Os nomes podem variar ligeiramente, então verificamos se 'mês/ano' ou 'acumulado' estão em alguma coluna
-                    colunas_str = [str(col).lower() for col in df.columns]
-                    
-                    if ('mês/ano' in ' '.join(colunas_str) or 'mes/ano' in ' '.join(colunas_str)) and \
-                       ('acumulado' in ' '.join(colunas_str) or 'juros' in ' '.join(colunas_str)):
-                        tabela_encontrada = df
-                        break # Encontramos a tabela, saímos do loop
-            except ValueError:
-                # pd.read_html pode falhar se não encontrar tabelas válidas no HTML
-                continue 
-            except Exception as e:
-                # Outros erros ao processar a tabela
-                print(f"Erro ao tentar ler uma tabela: {e}") # Apenas para depuração
-                continue
-        
-        if tabela_encontrada is not None:
-            return tabela_encontrada
+        if tabela_html:
+            # pd.read_html retorna uma lista de DataFrames, pegamos o primeiro [0]
+            # header=0 indica que a primeira linha é o cabeçalho
+            # thousands='.' e decimal=',' são importantes para ler números no formato BR
+            tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
+            return tabela
         else:
-            st.error("Tabela de SELIC Acumulada não encontrada na página. A estrutura do site pode ter mudado.")
+            st.error(f"Tabela com id '{tabela_id}' não encontrada na página.")
             return None
-
     except requests.exceptions.RequestException as e:
         st.error(f"Erro de conexão ao acessar a URL: {e}")
         return None
     except Exception as e:
-        st.error(f"Erro inesperado ao buscar a página: {e}")
+        st.error(f"Erro inesperado ao buscar tabela: {e}")
         return None
 
-# --- Restante das Funções (inalteradas, mas incluídas para contexto) ---
-
-def processar_tabela_acumulada(tabela_df, data_inicial):
+# --- Nova função de processamento para a tabela MENSAL ---
+def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
-    Processa a tabela de SELIC acumulada para somar as taxas do mês inicial
+    Processa a tabela de SELIC MENSAL, soma as taxas do mês inicial
     e dos meses subsequentes no mesmo ano.
     """
-    if tabela_df.shape[1] < 2:
-        st.error("A estrutura da tabela acumulada é inesperada. Verifique as colunas.")
+    # Nomes dos meses para mapear as colunas do DataFrame
+    meses_colunas = {
+        1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
+    }
+
+    # Verifica se as colunas esperadas estão presentes
+    # A primeira coluna é o Ano, e as outras são os meses
+    colunas_esperadas = ['Ano'] + list(meses_colunas.values())
+    
+    # Verifica se o DataFrame tem pelo menos o número de colunas esperado
+    if tabela_df.shape[1] < len(colunas_esperadas):
+        st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
+        # st.dataframe(tabela_df) # Descomente para depurar localmente
         return None, None
 
-    # Ajusta os nomes das colunas baseado na estrutura comum da tabela de acumulados
-    # Após a busca mais robusta, o nome das colunas pode variar.
-    # Vamos tentar inferir a coluna de Mês/Ano e a de Taxa Acumulada.
-    
-    col_mes_ano = None
-    col_taxa = None
-    
-    # Encontra a coluna de Mês/Ano (pode ser "Mês/Ano", "Mes/Ano", "Mês" + "Ano")
-    for col in tabela_df.columns:
-        col_lower = str(col).lower()
-        if 'mês' in col_lower or 'mes' in col_lower:
-            col_mes_ano = col
-        if ('acumulado' in col_lower or 'selic' in col_lower) and ('%' in col_lower or 'juros' in col_lower):
-            col_taxa = col
-        if col_mes_ano and col_taxa: # Se ambos forem encontrados, parar
-            break
+    # Renomeia as colunas do DataFrame para facilitar o acesso
+    # pd.read_html com header=0 geralmente pega 'Ano', 'Jan', 'Fev', etc.
+    # Mas é bom garantir.
+    tabela_df.columns = colunas_esperadas # Renomeia diretamente
 
-    if not col_mes_ano or not col_taxa:
-        st.error("Não foi possível identificar as colunas 'Mês/Ano' e 'Taxa Acumulada' na tabela lida.")
-        # st.dataframe(tabela_df) # Descomente para depurar localmente e ver os nomes das colunas
-        return None, None
+    # Converte a coluna 'Ano' para numérico
+    tabela_df['Ano'] = pd.to_numeric(tabela_df['Ano'], errors='coerce')
+    tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'}) # Remove NaNs e converte para int
 
-    tabela_df_processada = tabela_df[[col_mes_ano, col_taxa]].copy()
-    tabela_df_processada.columns = ['MesAno', 'TaxaAcumulada']
+    # Converte as colunas dos meses para numérico (tratando ',' como decimal e possivelmente '/')
+    for mes_nome in meses_colunas.values():
+        tabela_df[mes_nome] = pd.to_numeric(
+            tabela_df[mes_nome].astype(str).str.replace(',', '.'), # Substitui vírgula por ponto decimal
+            errors='coerce'
+        )
 
-    # Converte 'TaxaAcumulada' para numérico, tratando erros
-    tabela_df_processada['TaxaAcumulada'] = pd.to_numeric(
-        tabela_df_processada['TaxaAcumulada'].astype(str).str.replace(',', '.'), 
-        errors='coerce'
-    )
-    
-    # Converte 'MesAno' para datetime
-    tabela_df_processada['MesAno_dt'] = pd.to_datetime(tabela_df_processada['MesAno'], format='%m/%Y', errors='coerce')
-    
-    # Filtra linhas com datas inválidas
-    tabela_df_processada = tabela_df_processada.dropna(subset=['MesAno_dt', 'TaxaAcumulada'])
-    
-    mes_inicial = data_inicial.month
+    mes_inicial_num = data_inicial.month
     ano_inicial = data_inicial.year
     
     taxa_total_somada = 0.0
     taxas_detalhadas = []
     
-    iniciar_soma = False
+    # Encontra a linha do ano selecionado
+    linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
-    # Ordena o DataFrame para garantir que a iteração seja do mês mais antigo para o mais recente
-    tabela_df_processada = tabela_df_processada.sort_values(by='MesAno_dt')
+    if linha_ano.empty:
+        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
+        return 0.0, []
 
-    for index, row in tabela_df_processada.iterrows():
-        mes_tabela = row['MesAno_dt'].month
-        ano_tabela = row['MesAno_dt'].year
-        taxa_mes = row['TaxaAcumulada']
+    # Extrai a linha de dados do ano
+    dados_do_ano = linha_ano.iloc[0]
 
-        if ano_tabela == ano_inicial:
-            if not iniciar_soma:
-                if mes_tabela >= mes_inicial:
-                    iniciar_soma = True
-            
-            if iniciar_soma:
-                taxa_total_somada += taxa_mes
-                taxas_detalhadas.append(f"{row['MesAno']}: {taxa_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
+    # Itera pelos meses a partir do mês selecionado até o final do ano
+    for i in range(mes_inicial_num, 13): # Do mês inicial até Dezembro (12)
+        mes_nome = meses_colunas[i]
         
-        elif ano_tabela > ano_inicial and iniciar_soma:
-             break # Parar de somar se o ano ultrapassar o ano inicial
-
+        # Verifica se a taxa para o mês existe e não é NaN
+        if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
+            taxa_do_mes = dados_do_ano[mes_nome]
+            taxa_total_somada += taxa_do_mes
+            taxas_detalhadas.append(f"{mes_nome}/{ano_inicial}: {taxa_do_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
+        else:
+            # Se a taxa não estiver disponível para um mês (ex: meses futuros), para de somar
+            # pois significa que não há mais dados para o restante do ano ou site não atualizou
+            break 
+            
     return taxa_total_somada, taxas_detalhadas
 
 
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
+id_tabela_mensal = "lstValoresMensais" # ID da tabela de valores mensais
 
 if st.button("Calcular"):
     with st.spinner('Buscando dados e calculando...'):
-        tabela_acumulada = buscar_tabela_selic(url_selic) # Chama a nova função de busca
+        tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
 
-        if tabela_acumulada is not None:
-            total_taxa, taxas_detalhadas = processar_tabela_acumulada(tabela_acumulada, data_selecionada)
+        if tabela_mensal is not None:
+            total_taxa, taxas_detalhadas = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
 
             if total_taxa is not None and total_taxa > 0:
+                # A taxa do site já é um percentual, por exemplo, 0.12 significa 0.12%.
+                # Para usar na correção, dividimos por 100.
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                st.success(f"Soma das taxas SELIC acumuladas a partir de {data_selecionada.strftime('%m/%Y')}:")
+                st.success(f"Soma das taxas SELIC mensais a partir de {data_selecionada.strftime('%m/%Y')}:")
                 for detalhe in taxas_detalhadas:
                     st.write(f"- {detalhe}")
                 st.success(f"**Total acumulado:** **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
                 st.metric(
                     label=f"Valor corrigido a partir de {valor_digitado:,.2f}",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
-                    delta_color="off"
+                    delta_color="off" # Para não mostrar seta verde/vermelha
                 )
             else:
-                st.warning("Não foi possível encontrar dados ou a soma das taxas é zero para a data selecionada. Verifique se o mês/ano inicial tem dados e se há meses subsequentes.")
+                st.warning("Não foi possível encontrar dados ou a soma das taxas é zero para a data selecionada. Verifique se o mês/ano inicial tem dados e se há meses subsequentes neste ano.")
         else:
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 

@@ -57,7 +57,7 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC Acumulada")
-st.write("Corrige valores monetários aplicando a taxa SELIC mensal do mês selecionado **e somando as taxas dos meses subsequentes** até o final do ano disponível na tabela.")
+st.write("Corrige valores monetários aplicando a taxa SELIC mensal do mês selecionado **e somando as taxas dos meses subsequentes** até o final do ano disponível na tabela, **adicionando 1% ao total**.")
 
 st.divider()
 
@@ -68,33 +68,28 @@ valor_digitado = st.number_input(
     value=1000.00
 )
 
-# Ajustado para permitir seleção de meses futuros no mesmo ano, até a data atual para garantir dados
-data_limite_selecao = datetime.now().date().replace(day=1) # Sempre o primeiro dia do mês atual
+data_limite_selecao = datetime.now().date().replace(day=1) 
 
 data_selecionada = st.date_input(
     "Selecione o mês/ano INICIAL para o cálculo:",
-    value=data_limite_selecao, # Valor padrão para o primeiro dia do mês atual
-    min_value=datetime(2000, 1, 1).date(), # Começa em 2000
-    max_value=data_limite_selecao # O usuário pode selecionar até o mês atual (inclusive)
+    value=data_limite_selecao,
+    min_value=datetime(2000, 1, 1).date(),
+    max_value=data_limite_selecao
 )
 
 st.divider()
 
-# --- Função de busca da tabela pelo ID (voltamos a usar o ID já que você o forneceu) ---
 def buscar_tabela_por_id(url, tabela_id):
     """
     Busca uma tabela HTML por ID em uma URL e a retorna como um DataFrame Pandas.
     """
     try:
-        response = requests.get(url, timeout=10) # Adiciona timeout
-        response.raise_for_status()  # Levanta um HTTPError para respostas de erro (4xx ou 5xx)
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         tabela_html = soup.find('table', id=tabela_id)
         
         if tabela_html:
-            # pd.read_html retorna uma lista de DataFrames, pegamos o primeiro [0]
-            # header=0 indica que a primeira linha é o cabeçalho
-            # thousands='.' e decimal=',' são importantes para ler números no formato BR
             tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
             return tabela
         else:
@@ -107,41 +102,30 @@ def buscar_tabela_por_id(url, tabela_id):
         st.error(f"Erro inesperado ao buscar tabela: {e}")
         return None
 
-# --- Nova função de processamento para a tabela MENSAL ---
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
     Processa a tabela de SELIC MENSAL, soma as taxas do mês inicial
-    e dos meses subsequentes no mesmo ano.
+    e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
     """
-    # Nomes dos meses para mapear as colunas do DataFrame
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
         7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
     }
 
-    # Verifica se as colunas esperadas estão presentes
-    # A primeira coluna é o Ano, e as outras são os meses
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
     
-    # Verifica se o DataFrame tem pelo menos o número de colunas esperado
     if tabela_df.shape[1] < len(colunas_esperadas):
         st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
-        # st.dataframe(tabela_df) # Descomente para depurar localmente
         return None, None
 
-    # Renomeia as colunas do DataFrame para facilitar o acesso
-    # pd.read_html com header=0 geralmente pega 'Ano', 'Jan', 'Fev', etc.
-    # Mas é bom garantir.
-    tabela_df.columns = colunas_esperadas # Renomeia diretamente
+    tabela_df.columns = colunas_esperadas
 
-    # Converte a coluna 'Ano' para numérico
     tabela_df['Ano'] = pd.to_numeric(tabela_df['Ano'], errors='coerce')
-    tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'}) # Remove NaNs e converte para int
+    tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'})
 
-    # Converte as colunas dos meses para numérico (tratando ',' como decimal e possivelmente '/')
     for mes_nome in meses_colunas.values():
         tabela_df[mes_nome] = pd.to_numeric(
-            tabela_df[mes_nome].astype(str).str.replace(',', '.'), # Substitui vírgula por ponto decimal
+            tabela_df[mes_nome].astype(str).str.replace(',', '.'),
             errors='coerce'
         )
 
@@ -151,35 +135,35 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     taxa_total_somada = 0.0
     taxas_detalhadas = []
     
-    # Encontra a linha do ano selecionado
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
         st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
         return 0.0, []
 
-    # Extrai a linha de dados do ano
     dados_do_ano = linha_ano.iloc[0]
 
-    # Itera pelos meses a partir do mês selecionado até o final do ano
-    for i in range(mes_inicial_num, 13): # Do mês inicial até Dezembro (12)
+    for i in range(mes_inicial_num, 13):
         mes_nome = meses_colunas[i]
         
-        # Verifica se a taxa para o mês existe e não é NaN
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
-            taxas_detalhadas.append(f"{mes_nome}/{ano_inicial}: {taxa_do_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
+            taxas_detalhadas.2.append(f"{mes_nome}/{ano_inicial}: {taxa_do_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
         else:
-            # Se a taxa não estiver disponível para um mês (ex: meses futuros), para de somar
-            # pois significa que não há mais dados para o restante do ano ou site não atualizou
-            break 
+            break
             
+    # --- ADIÇÃO DO 1% AQUI ---
+    taxa_total_somada += 1.0 # Adiciona 1% ao total somado
+    taxas_detalhadas.append("--------------------")
+    taxas_detalhadas.append(f"**+ 1,00% (Adicional)**")
+    # -------------------------
+
     return taxa_total_somada, taxas_detalhadas
 
 
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
-id_tabela_mensal = "lstValoresMensais" # ID da tabela de valores mensais
+id_tabela_mensal = "lstValoresMensais"
 
 if st.button("Calcular"):
     with st.spinner('Buscando dados e calculando...'):
@@ -189,18 +173,16 @@ if st.button("Calcular"):
             total_taxa, taxas_detalhadas = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
 
             if total_taxa is not None and total_taxa > 0:
-                # A taxa do site já é um percentual, por exemplo, 0.12 significa 0.12%.
-                # Para usar na correção, dividimos por 100.
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                st.success(f"Soma das taxas SELIC mensais a partir de {data_selecionada.strftime('%m/%Y')}:")
+                st.success(f"Soma das taxas SELIC mensais a partir de {data_selecionada.strftime('%m/%Y')} (com adicional de 1%):")
                 for detalhe in taxas_detalhadas:
                     st.write(f"- {detalhe}")
                 st.success(f"**Total acumulado:** **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
                 st.metric(
                     label=f"Valor corrigido a partir de {valor_digitado:,.2f}",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
-                    delta_color="off" # Para não mostrar seta verde/vermelha
+                    delta_color="off"
                 )
             else:
                 st.warning("Não foi possível encontrar dados ou a soma das taxas é zero para a data selecionada. Verifique se o mês/ano inicial tem dados e se há meses subsequentes neste ano.")

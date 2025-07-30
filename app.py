@@ -57,7 +57,7 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC Acumulada")
-st.write("Corrige valores monetários aplicando a taxa SELIC mensal do mês selecionado **e somando as taxas dos meses subsequentes** até o final do ano disponível na tabela, **adicionando 1% ao total**.")
+st.write("Corrige valores monetários aplicando a taxa SELIC mensal, somando as taxas **a partir do mês seguinte** ao selecionado até o final do ano disponível na tabela, **adicionando 1% ao total**.")
 
 st.divider()
 
@@ -72,7 +72,7 @@ valor_digitado = st.number_input(
 data_limite_selecao = datetime.now().date().replace(day=1) 
 
 data_selecionada = st.date_input(
-    "Selecione o mês/ano INICIAL para o cálculo:",
+    "Selecione o mês/ano (o cálculo da SELIC acumulada começará no mês seguinte):",
     value=data_limite_selecao,
     min_value=datetime(2000, 1, 1).date(),
     max_value=data_limite_selecao
@@ -109,8 +109,8 @@ def buscar_tabela_por_id(url, tabela_id):
 
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
-    Processa a tabela de SELIC MENSAL, soma as taxas do mês inicial
-    e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
+    Processa a tabela de SELIC MENSAL, soma as taxas a partir do mês seguinte
+    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
     """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
@@ -123,14 +123,11 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
         st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
         return None, None
 
-    # Garante que as colunas do DataFrame correspondem aos nomes esperados
     tabela_df.columns = colunas_esperadas
 
-    # Converte a coluna 'Ano' para numérico e tipo inteiro
     tabela_df['Ano'] = pd.to_numeric(tabela_df['Ano'], errors='coerce')
     tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'})
 
-    # Converte as colunas dos meses para numérico (tratando ',' como decimal)
     for mes_nome in meses_colunas.values():
         tabela_df[mes_nome] = pd.to_numeric(
             tabela_df[mes_nome].astype(str).str.replace(',', '.'),
@@ -143,7 +140,6 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     taxa_total_somada = 0.0
     taxas_detalhadas = []
     
-    # Encontra a linha correspondente ao ano selecionado
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
@@ -152,20 +148,17 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     dados_do_ano = linha_ano.iloc[0]
 
-    # Itera pelos meses a partir do mês selecionado até o final do ano
-    for i in range(mes_inicial_num, 13):
+    # --- AQUI ESTÁ A MUDANÇA: Começa a somar do mês seguinte (mes_inicial_num + 1) ---
+    for i in range(mes_inicial_num + 1, 13): 
         mes_nome = meses_colunas[i]
         
-        # Verifica se a taxa para o mês existe e não é um valor nulo (NaN)
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
-            # Adiciona a taxa formatada à lista de detalhes
             taxas_detalhadas.append(f"{mes_nome}/{ano_inicial}: {taxa_do_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
         else:
-            # Se a taxa não estiver disponível para um mês (ex: meses futuros), para de somar
-            break # Assume que não há mais dados para o restante do ano
-
+            break 
+            
     # --- ADIÇÃO DO 1% AO TOTAL DAS TAXAS SOMADAS ---
     taxa_total_somada += 1.0 
     taxas_detalhadas.append("--------------------")
@@ -176,39 +169,32 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
 # --- Lógica Principal da Aplicação Streamlit ---
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
-id_tabela_mensal = "lstValoresMensais" # ID da tabela de valores mensais
+id_tabela_mensal = "lstValoresMensais"
 
 if st.button("Calcular"):
     with st.spinner('Buscando dados e calculando...'):
-        # Busca a tabela mensal pelo ID
         tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
 
         if tabela_mensal is not None:
-            # Processa a tabela para obter a soma das taxas e os detalhes
             total_taxa, taxas_detalhadas = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
 
             if total_taxa is not None and total_taxa > 0:
-                # Calcula o valor corrigido usando a soma total das taxas (já com o 1% adicionado)
-                # A taxa do site já é um percentual, por exemplo, 0.12 significa 0.12%.
-                # Para usar na correção, dividimos por 100.
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                st.success(f"Soma das taxas SELIC mensais a partir de {data_selecionada.strftime('%m/%Y')} (com adicional de 1%):")
-                # Exibe os detalhes das taxas somadas
+                # Atualiza a mensagem para refletir que o cálculo começa do mês seguinte
+                st.success(f"Soma das taxas SELIC mensais a partir de **{data_selecionada.strftime('%m/%Y')} (mês seguinte)** (com adicional de 1%):")
                 for detalhe in taxas_detalhadas:
                     st.write(f"- {detalhe}")
                 
-                # Exibe o total acumulado das taxas
                 st.success(f"**Total das taxas:** **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
                 
-                # Exibe o valor final corrigido
                 st.metric(
                     label=f"Valor corrigido a partir de R$ {valor_digitado:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
-                    delta_color="off" # Para não mostrar seta verde/vermelha
+                    delta_color="off"
                 )
             else:
-                st.warning("Não foi possível encontrar dados ou a soma das taxas é zero para a data selecionada. Verifique se o mês/ano inicial tem dados e se há meses subsequentes neste ano.")
+                st.warning(f"Não foi possível encontrar dados ou a soma das taxas é zero para o ano de {data_selecionada.year} a partir do mês seguinte ao selecionado. Verifique se há dados disponíveis.")
         else:
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 

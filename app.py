@@ -20,7 +20,7 @@ st.markdown(
         h1 {
             color: #003366; /* Azul escuro para o título principal */
             text-align: center;
-            margin-bottom: 10px; /* Reduzindo a margem inferior do título principal */
+            margin-bottom: 10px; /* Margem inferior do título principal */
         }
 
         /* Labels dos inputs e selectboxes */
@@ -38,7 +38,7 @@ st.markdown(
             background-color: #004d99; /* Azul escuro para o fundo dos controles */
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 2px; /* AJUSTE AQUI: Padronizando a margem inferior para 2px */
+            margin-bottom: 8px; /* AJUSTE AQUI: Padronizando a margem inferior dos inputs/selectboxes */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
@@ -73,7 +73,7 @@ st.markdown(
             width: 100%;
             border: none;
             transition: background-color 0.3s ease;
-            margin-top: 15px; /* Ajustando a margem superior do botão */
+            margin-top: 15px; /* Margem superior do botão */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .stButton>button:hover {
@@ -85,7 +85,7 @@ st.markdown(
         div[data-testid="stAlert"] {
             border-radius: 8px;
             padding: 15px;
-            margin-top: 15px; /* Ajustando a margem superior dos alerts */
+            margin-top: 15px; /* Margem superior dos alerts */
             font-size: 1.1em;
             font-weight: bold;
         }
@@ -100,7 +100,7 @@ st.markdown(
             border-radius: 12px;
             border: 2px solid #007bff; /* Borda mais pronunciada */
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            margin-top: 20px; /* Ajustando a margem superior do metric */
+            margin-top: 20px; /* Margem superior do metric */
             text-align: center; /* Centraliza o conteúdo do metric */
         }
         [data-testid="stMetric"] label {
@@ -118,19 +118,20 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            margin: 2px 0; /* Margem padrão menor e uniforme para todos os divisores */
+            margin: 8px 0; /* Margem padrão e uniforme para todos os divisores */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
 
         /* Margem inferior para o st.write que acompanha o título principal */
+        /* Note: Isso afeta o p gerado pelo st.write */
         .stMarkdown p:last-of-type { 
-            margin-bottom: 2px; /* AJUSTE AQUI: Margem para o parágrafo antes do primeiro divisor */
+            margin-bottom: 8px; /* AJUSTE AQUI: Margem para o parágrafo antes do primeiro divisor */
         }
 
         /* Margem para títulos h3 gerados por st.markdown("### ...") */
         .stMarkdown h3 {
-            margin-top: 2px; /* Reduzindo ainda mais a margem superior do H3 */
-            margin-bottom: 2px; /* Mantendo a margem inferior do título H3 */
+            margin-top: 8px; /* AJUSTE AQUI: Padronizando a margem superior do H3 para 8px */
+            margin-bottom: 8px; /* Mantendo a margem inferior do título H3 */
         }
 
 
@@ -139,7 +140,7 @@ st.markdown(
             text-align: center;
             font-size: 0.9em;
             color: #666; /* Cor mais suave para o rodapé */
-            margin-top: 3em; /* Reduz a margem superior do rodapé */
+            margin-top: 3em; /* Margem superior do rodapé */
             padding: 20px 0;
             border-top: 1px solid #eee;
         }
@@ -178,7 +179,7 @@ st.markdown(
 
             .stNumberInput, .stSelectbox {
                 padding: 10px; /* Reduz o padding dos inputs */
-                margin-bottom: 2px; /* AJUSTE AQUI: Margem inferior para telas menores */
+                margin-bottom: 8px; /* AJUSTE AQUI: Margem inferior para telas menores */
             }
 
             .stButton>button {
@@ -207,14 +208,14 @@ st.markdown(
             }
 
             .stDivider {
-                margin: 2px 0; /* Divisores mais próximos em telas menores */
+                margin: 5px 0; /* AJUSTE AQUI: Divisores mais próximos em telas menores */
             }
             .stMarkdown h3 {
-                margin-top: 2px; /* Títulos h3 mais próximos em telas menores */
-                margin-bottom: 2px;
+                margin-top: 5px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
+                margin-bottom: 5px;
             }
             .stMarkdown p:last-of-type {
-                margin-bottom: 2px; /* Margem para o parágrafo antes do primeiro divisor em telas menores */
+                margin-bottom: 5px; /* AJUSTE AQUI: Margem para o parágrafo antes do primeiro divisor em telas menores */
             }
         }
 
@@ -238,7 +239,7 @@ st.markdown(
 st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
-st.divider() 
+st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -251,11 +252,11 @@ with col1:
         value=1000.00
     )
 
-st.divider() 
+st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
-st.markdown("### **Selecione a Data de Vencimento:**")
+st.markdown("### **Selecione a Data de Vencimento:**") # Este h3 tem margin-top: 8px e margin-bottom: 8px
 
-st.divider() # Adicionei este st.divider() pois na sua última versão ele foi removido e pode ter sido um erro.
+st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 col_mes, col_ano = st.columns(2)
 

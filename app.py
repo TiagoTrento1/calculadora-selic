@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 # --- Configuração da Página e Estilos CSS ---
-st.set_page_config(page_title="Calculadora SELIC Acumulada", page_icon="📈", layout="centered")
+st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
 st.markdown(
     """
@@ -57,7 +57,7 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC Acumulada")
-st.write("Corrige valores monetários aplicando a taxa SELIC mensal, somando as taxas **a partir do mês seguinte** ao selecionado até o final do ano disponível na tabela, **adicionando 1% ao total**.")
+st.write("Corrige valores monetários aplicando a taxa SELIC")
 
 st.divider()
 
@@ -72,7 +72,7 @@ valor_digitado = st.number_input(
 data_limite_selecao = datetime.now().date().replace(day=1) 
 
 data_selecionada = st.date_input(
-    "Selecione o mês/ano (o cálculo da SELIC acumulada começará no mês seguinte):",
+    "Selecione a data de vencimento:",
     value=data_limite_selecao,
     min_value=datetime(2000, 1, 1).date(),
     max_value=data_limite_selecao

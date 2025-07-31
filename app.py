@@ -118,7 +118,7 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            margin: 30px 0;
+            margin: 30px 0; /* Ajustado para 30px de margem superior e inferior */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
 
@@ -212,9 +212,12 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC")
-st.write("Corrige valores monetários aplicando a taxa SELIC")
+st.write("Corrige valores monetários aplicando a taxa SELIC mensal:") # Texto inalterado
 
+# Primeiras alterações para uniformizar os divisores
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
 st.divider()
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -227,9 +230,14 @@ with col1:
         value=1000.00
     )
 
-st.markdown("---")
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.divider()
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+
 
 st.markdown("### **Selecione a Data de Vencimento:**")
+st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao selecionado, com um adicional de 1% ao total.")
+
 
 col_mes, col_ano = st.columns(2)
 
@@ -240,7 +248,7 @@ anos_disponiveis = list(range(2000, current_year + 1))
 anos_disponiveis.reverse()
 
 meses_nomes = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
     7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 }
 meses_selecao = list(meses_nomes.values())
@@ -260,9 +268,9 @@ with col_ano:
         index=0 # Seleciona o ano atual por padrão (já que a lista está invertida)
     )
 
-data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
-
-st.markdown("---")
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.divider()
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):
@@ -380,6 +388,9 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
+# Use um divisor e margem para o rodapé também, seguindo o padrão
+st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True) # Espaçamento antes do rodapé
+st.divider()
 st.markdown(
     """
     <div class="footer">

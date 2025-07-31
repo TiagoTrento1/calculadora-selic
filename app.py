@@ -15,13 +15,13 @@ st.markdown(
         /* Estilo para o número de entrada */
         div[data-testid="stNumberInput"] label {
             font-weight: bold;
-            color: #003366;
+            color: white; /* MUDANÇA AQUI: Cor da label para branco */
         }
 
         /* Estilo para os selectboxes (mês/ano) */
         div[data-testid="stSelectbox"] label {
             font-weight: bold;
-            color: #003366;
+            color: white; /* MUDANÇA AQUI: Cor da label para branco */
         }
 
         .stButton>button {
@@ -99,7 +99,7 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     valor_digitado = st.number_input(
-        "**Valor base para o cálculo (R$):**",
+        "**Valor base para o cálculo (R$):**", # O negrito aqui não afeta a cor via CSS
         min_value=0.01,
         format="%.2f",
         value=1000.00
@@ -108,6 +108,8 @@ with col1:
 st.markdown("---")
 
 st.markdown("### **Selecione a Data de Vencimento:**")
+st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao selecionado, com um adicional de 1% ao total.")
+
 
 col_mes, col_ano = st.columns(2)
 
@@ -125,7 +127,7 @@ meses_selecao = list(meses_nomes.values())
 
 with col_mes:
     mes_selecionado_nome = st.selectbox(
-        "Mês:",
+        "Mês:", # O negrito aqui não afeta a cor via CSS
         options=meses_selecao,
         index=current_month - 1
     )
@@ -133,7 +135,7 @@ with col_mes:
 
 with col_ano:
     ano_selecionado = st.selectbox(
-        "Ano:",
+        "Ano:", # O negrito aqui não afeta a cor via CSS
         options=anos_disponiveis,
         index=0
     )
@@ -152,7 +154,7 @@ def buscar_tabela_por_id(url, tabela_id):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         tabela_html = soup.find('table', id=tabela_id)
-
+        
         if tabela_html:
             tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
             return tabela
@@ -177,7 +179,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     }
 
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
-
+    
     if tabela_df.shape[1] < len(colunas_esperadas):
         st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
         return None, None
@@ -195,9 +197,9 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     mes_inicial_num = data_inicial.month
     ano_inicial = data_inicial.year
-
+    
     taxa_total_somada = 0.0
-
+    
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
@@ -206,19 +208,20 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     dados_do_ano = linha_ano.iloc[0]
 
-    for i in range(mes_inicial_num + 1, 13):
+    for i in range(mes_inicial_num + 1, 13): 
         mes_nome = meses_colunas[i]
-
+        
+        # Garante que a data não seja futura em relação à data atual (2025-07-30)
         if ano_inicial == datetime.now().year and i > datetime.now().month:
-            break
-
+            break 
+        
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
         else:
-            break
-
-    taxa_total_somada += 1.0
+            break 
+            
+    taxa_total_somada += 1.0 
 
     return taxa_total_somada, None
 
@@ -236,10 +239,8 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # --- MUDANÇA AQUI: Nova frase de exibição ---
                 st.info(f"**Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}:** {total_taxa:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
-                # ---------------------------------------------
-
+                
                 st.metric(
                     label=f"**Valor Corrigido (R$):**",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),

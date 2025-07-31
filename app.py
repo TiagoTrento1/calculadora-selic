@@ -118,7 +118,7 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            margin: 30px 0; /* Ajustado para 30px de margem superior e inferior */
+            margin: 15px 0; /* Ajustado para reduzir o espaço */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
 
@@ -214,10 +214,10 @@ st.markdown(
 st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
-# Ajuste aqui: Diminuindo o margin-top para 10px (ou outro valor menor/0)
-st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+# Ajuste aqui: Reduzindo o margin-top para aproximar do texto acima
+st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -230,9 +230,10 @@ with col1:
         value=1000.00
     )
 
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+# Ajuste aqui: Reduzindo o margin-top para aproximar do input acima
+st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 
 
 st.markdown("### **Selecione a Data de Vencimento:**")
@@ -269,9 +270,10 @@ with col_ano:
 
 data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
 
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+# Ajuste aqui: Reduzindo o margin-top para aproximar dos selectboxes acima
+st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True) # Reduzido de 30px
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):
@@ -380,7 +382,8 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
-st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+# Ajuste aqui: Mantendo a margem do rodapé um pouco maior para separação
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Ajustado para 30px (era 40px)
 st.divider()
 st.markdown(
     """

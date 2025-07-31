@@ -118,13 +118,13 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            margin: 8px 0; /* Margem padrão menor e uniforme para todos os divisores */
+            margin: 5px 0; /* Margem padrão menor e uniforme para todos os divisores */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
 
         /* Margem inferior para o st.write que acompanha o título principal */
         .stMarkdown p:last-of-type { 
-            margin-bottom: 8px; /* Ajusta a margem para aproximar do divisor */
+            margin-bottom: 5px; /* Ajusta a margem para aproximar do divisor */
         }
 
         /* Margem para títulos h3 gerados por st.markdown("### ...") */

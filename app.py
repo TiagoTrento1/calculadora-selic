@@ -255,8 +255,6 @@ st.divider() # O espaço aqui é controlado pelo CSS do .stNumberInput e .stDivi
 
 st.markdown("### **Selecione a Data de Vencimento:**")
 
-st.divider() # O espaço aqui é controlado pelo CSS do .stMarkdown h3 e .stDivider
-
 col_mes, col_ano = st.columns(2)
 
 current_year = datetime.now().year

@@ -207,14 +207,14 @@ st.markdown(
             }
 
             .stDivider {
-                margin: 5px 0; /* Divisores mais próximos em telas menores */
+                margin: 2px 0; /* Divisores mais próximos em telas menores */
             }
             .stMarkdown h3 {
-                margin-top: 3px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
-                margin-bottom: 5px;
+                margin-top: 2px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
+                margin-bottom: 2px;
             }
             .stMarkdown p:last-of-type {
-                margin-bottom: 5px;
+                margin-bottom: 2px;
             }
         }
 

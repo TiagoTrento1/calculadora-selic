@@ -56,7 +56,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("📈 Calculadora SELIC Acumulada")
+st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC:")
 
 st.divider()

@@ -12,11 +12,24 @@ st.markdown(
     <style>
         h1 { color: #003366; }
 
+        /* Estilo para o número de entrada */
+        div[data-testid="stNumberInput"] label {
+            font-weight: bold;
+            color: #003366;
+        }
+
+        /* Estilo para os selectboxes (mês/ano) */
+        div[data-testid="stSelectbox"] label {
+            font-weight: bold;
+            color: #003366;
+        }
+
         .stButton>button {
             background-color: #003366;
             color: white;
             border-radius: 5px;
             padding: 0.5em 1em;
+            width: 100%; /* Botão "Calcular" ocupa a largura total da coluna */
         }
 
         .footer {
@@ -57,28 +70,65 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC")
-st.write("Corrige valores monetários aplicando a taxa SELIC:")
+st.write("Corrija valores monetários aplicando a taxa SELIC mensal.")
 
 st.divider()
 
 # --- Entrada de Dados do Usuário ---
-valor_digitado = st.number_input(
-    "Valor base para o cálculo (R$):",
-    min_value=0.01,
-    format="%.2f",
-    value=1000.00
-)
+# Usando st.columns para um layout mais organizado
+col1, col2 = st.columns([2, 1]) # Coluna 1 para valor, Coluna 2 para espaço/alinhamento
 
-data_limite_selecao = datetime.now().date().replace(day=1) 
+with col1:
+    valor_digitado = st.number_input(
+        "**Valor base para o cálculo (R$):**",
+        min_value=0.01,
+        format="%.2f",
+        value=1000.00
+    )
 
-data_selecionada = st.date_input(
-    "Selecione a data de vencimento:",
-    value=data_limite_selecao,
-    min_value=datetime(2000, 1, 1).date(),
-    max_value=data_limite_selecao
-)
+# --- Seleção de Mês e Ano Separadamente ---
+st.markdown("---") # Divisor para separar a entrada de valor da seleção de data
 
-st.divider()
+st.markdown("### **Selecione a Data de Vencimento:**")
+st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao selecionado, com um adicional de 1% ao total.")
+
+col_mes, col_ano = st.columns(2) # Duas colunas para mês e ano
+
+current_year = datetime.now().year
+current_month = datetime.now().month
+
+# Gerar lista de anos desde 2000 até o ano atual
+anos_disponiveis = list(range(2000, current_year + 1))
+anos_disponiveis.reverse() # Para que o ano mais recente apareça primeiro
+
+# Gerar lista de meses (nome e número)
+meses_nomes = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+}
+meses_selecao = list(meses_nomes.values())
+
+with col_mes:
+    mes_selecionado_nome = st.selectbox(
+        "Mês:",
+        options=meses_selecao,
+        index=current_month - 1 # Seleciona o mês atual por padrão
+    )
+    # Converter nome do mês para número
+    mes_selecionado_num = [k for k, v in meses_nomes.items() if v == mes_selecionado_nome][0]
+
+with col_ano:
+    ano_selecionado = st.selectbox(
+        "Ano:",
+        options=anos_disponiveis,
+        index=0 # Seleciona o ano atual por padrão (já que a lista está invertida)
+    )
+
+# Criar o objeto datetime a partir das seleções de mês e ano
+# Usamos o primeiro dia do mês para consistência
+data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
+
+st.markdown("---") # Divisor final antes do botão
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):
@@ -92,13 +142,10 @@ def buscar_tabela_por_id(url, tabela_id):
         tabela_html = soup.find('table', id=tabela_id)
         
         if tabela_html:
-            # pd.read_html retorna uma lista de DataFrames, pegamos o primeiro [0]
-            # header=0 indica que a primeira linha é o cabeçalho
-            # thousands='.' e decimal=',' são importantes para ler números no formato BR
             tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
             return tabela
         else:
-            st.error(f"Tabela com id '{tabela_id}' não encontrada na página.")
+            st.error(f"Tabela com id '{tabela_id}' não encontrada na página. Verifique o ID no site.")
             return None
     except requests.exceptions.RequestException as e:
         st.error(f"Erro de conexão ao acessar a URL: {e}")
@@ -143,20 +190,26 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
-        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
+        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal. Certifique-se de que o ano selecionado está presente nos dados da SELIC.")
         return 0.0, []
 
     dados_do_ano = linha_ano.iloc[0]
 
-    # --- AQUI ESTÁ A MUDANÇA: Começa a somar do mês seguinte (mes_inicial_num + 1) ---
+    # Começa a somar do mês seguinte (mes_inicial_num + 1)
     for i in range(mes_inicial_num + 1, 13): 
         mes_nome = meses_colunas[i]
+        
+        # Garante que a data não seja futura em relação à data atual
+        if ano_inicial == datetime.now().year and i > datetime.now().month:
+            # Se for um mês futuro no ano atual, não há dados ainda.
+            break
         
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
             taxas_detalhadas.append(f"{mes_nome}/{ano_inicial}: {taxa_do_mes:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
         else:
+            # Se a taxa não estiver disponível para um mês (NaN), para de somar
             break 
             
     # --- ADIÇÃO DO 1% AO TOTAL DAS TAXAS SOMADAS ---
@@ -181,20 +234,23 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Atualiza a mensagem para refletir que o cálculo começa do mês seguinte
-                st.success(f"Soma das taxas SELIC mensais a partir de **{data_selecionada.strftime('%m/%Y')} (mês seguinte)** (com adicional de 1%):")
+                st.success(f"**Cálculo da SELIC acumulada para {data_selecionada.strftime('%m/%Y')} (a partir do mês seguinte):**")
+                
+                # Exibe os detalhes das taxas somadas
                 for detalhe in taxas_detalhadas:
                     st.write(f"- {detalhe}")
                 
-                st.success(f"**Total das taxas:** **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
+                # Exibe o total acumulado das taxas
+                st.markdown(f"### **Taxa SELIC Total:** **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
                 
+                # Exibe o valor final corrigido
                 st.metric(
-                    label=f"Valor corrigido a partir de R$ {valor_digitado:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
+                    label=f"**Valor Corrigido (R$):**",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
                     delta_color="off"
                 )
             else:
-                st.warning(f"Não foi possível encontrar dados ou a soma das taxas é zero para o ano de {data_selecionada.year} a partir do mês seguinte ao selecionado. Verifique se há dados disponíveis.")
+                st.warning(f"Não foi possível encontrar dados ou a soma das taxas é zero para o ano de {data_selecionada.year} a partir do mês seguinte ao selecionado. Verifique se há dados disponíveis ou se a data é muito recente/futura.")
         else:
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 

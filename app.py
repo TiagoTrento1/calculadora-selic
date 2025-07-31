@@ -10,33 +10,112 @@ st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="cen
 st.markdown(
     """
     <style>
-        h1 { color: #003366; }
-
-        /* Estilo para o número de entrada */
-        div[data-testid="stNumberInput"] label {
-            font-weight: bold;
-            color: white; /* MUDANÇA AQUI: Cor da label para branco */
+        /* Cores e Fontes Globais */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333; /* Texto padrão mais escuro */
+            background-color: #f0f2f6; /* Fundo claro */
         }
 
-        /* Estilo para os selectboxes (mês/ano) */
-        div[data-testid="stSelectbox"] label {
-            font-weight: bold;
-            color: white; /* MUDANÇA AQUI: Cor da label para branco */
+        h1 {
+            color: #003366; /* Azul escuro para o título principal */
+            text-align: center;
+            margin-bottom: 20px;
         }
 
+        /* Labels dos inputs e selectboxes */
+        div[data-testid="stNumberInput"] label,
+        div[data-testid="stSelectbox"] label,
+        .stMarkdown h3 strong { /* Aplica a cor branca também aos st.markdown h3 strong */
+            font-weight: bold;
+            color: white !important; /* Branco para labels de input/selectbox e títulos de seção */
+            font-size: 1.1em;
+            margin-bottom: 5px; /* Espaçamento abaixo da label */
+        }
+
+        /* Estilo para os inputs e selectboxes em si */
+        .stNumberInput, .stSelectbox {
+            background-color: #004d99; /* Azul escuro para o fundo dos controles */
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        /* Cor do texto dentro dos inputs */
+        .stNumberInput input, .stSelectbox div[data-baseweb="select"] input {
+            color: white !important;
+            background-color: #004d99 !important; /* Cor de fundo do input */
+            border: 1px solid #0056b3; /* Borda mais suave */
+        }
+
+        /* Botão "Calcular" */
         .stButton>button {
-            background-color: #003366;
+            background-color: #007bff; /* Azul vibrante */
             color: white;
-            border-radius: 5px;
-            padding: 0.5em 1em;
-            width: 100%; /* Botão "Calcular" ocupa a largura total da coluna */
+            border-radius: 8px;
+            padding: 0.7em 1.5em;
+            font-size: 1.1em;
+            font-weight: bold;
+            width: 100%;
+            border: none;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .stButton>button:hover {
+            background-color: #0056b3; /* Azul mais escuro no hover */
+            cursor: pointer;
         }
 
+        /* Mensagens de sucesso/info/warning/error */
+        div[data-testid="stAlert"] {
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
+            color: inherit !important; /* Mantém a cor do texto do alert */
+        }
+
+        /* Estilo para o valor corrigido em destaque (st.metric) */
+        [data-testid="stMetric"] {
+            background-color: #e0f7fa; /* Fundo azul bem claro, quase branco */
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #007bff; /* Borda mais pronunciada */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            margin-top: 30px;
+            text-align: center; /* Centraliza o conteúdo do metric */
+        }
+        [data-testid="stMetric"] label {
+            font-size: 1.4em !important; /* Aumenta a label do metric */
+            color: #003366 !important;
+            font-weight: bold;
+            margin-bottom: 10px; /* Espaçamento abaixo da label */
+        }
+        [data-testid="stMetric"] div[data-testid="stMetricValue"] {
+            font-size: 3.5em !important; /* Valor ainda maior */
+            color: #007bff !important; /* Cor do valor mais viva */
+            font-weight: bolder !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* Sombra de texto */
+        }
+
+        /* Divisores */
+        .stDivider {
+            margin: 30px 0;
+            border-top: 2px solid #ddd; /* Linha mais visível */
+        }
+
+        /* Rodapé */
         .footer {
             text-align: center;
             font-size: 0.9em;
-            color: #888;
-            margin-top: 3em;
+            color: #666; /* Cor mais suave para o rodapé */
+            margin-top: 4em;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
         }
 
         .linkedin-btn {
@@ -45,7 +124,7 @@ st.markdown(
             gap: 8px;
             background-color: #0e76a8;
             color: white !important;
-            padding: 0.5em 1em;
+            padding: 0.6em 1.2em;
             border: none;
             border-radius: 5px;
             text-decoration: none;
@@ -60,37 +139,66 @@ st.markdown(
         }
 
         .linkedin-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px; /* Ícone um pouco maior */
+            height: 20px;
             fill: white;
         }
 
-        /* Estilo para o valor corrigido em destaque */
-        [data-testid="stMetric"] {
-            background-color: #e0f2f7; /* Fundo azul claro */
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #003366;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-            margin-top: 20px;
+        /* --- Responsividade --- */
+        @media (max-width: 768px) { /* Para telas menores que 768px (tablets e celulares) */
+            h1 {
+                font-size: 2em; /* Reduz o tamanho do título em telas menores */
+            }
+
+            .stNumberInput, .stSelectbox {
+                padding: 10px; /* Reduz o padding dos inputs */
+                margin-bottom: 10px;
+            }
+
+            .stButton>button {
+                padding: 0.6em 1em;
+                font-size: 1em;
+            }
+
+            /* Quebra as colunas para empilhar em telas menores */
+            div[data-testid="stColumns"] {
+                flex-direction: column;
+            }
+            div[data-testid="stColumns"] > div {
+                width: 100% !important; /* Faz as colunas ocuparem a largura total */
+            }
+
+            [data-testid="stMetric"] {
+                padding: 15px;
+                margin-top: 25px;
+            }
+            [data-testid="stMetric"] label {
+                font-size: 1.1em !important;
+            }
+            [data-testid="stMetric"] div[data-testid="stMetricValue"] {
+                font-size: 2.8em !important;
+            }
         }
-        [data-testid="stMetric"] label {
-            font-size: 1.2em !important;
-            color: #003366 !important;
-            font-weight: bold;
+
+        @media (max-width: 480px) { /* Para telas de celular muito pequenas */
+            h1 {
+                font-size: 1.8em;
+            }
+            .stNumberInput input, .stSelectbox div[data-baseweb="select"] input {
+                font-size: 0.9em; /* Reduz o tamanho da fonte dentro dos inputs */
+            }
+            [data-testid="stMetric"] div[data-testid="stMetricValue"] {
+                font-size: 2.2em !important; /* Ajusta ainda mais para telas pequenas */
+            }
         }
-        [data-testid="stMetric"] div[data-testid="stMetricValue"] {
-            font-size: 2.5em !important; /* Aumenta o tamanho da fonte */
-            color: #003366 !important;
-            font-weight: bolder !important;
-        }
+
     </style>
     """,
     unsafe_allow_html=True
 )
 
 st.title("📈 Calculadora SELIC")
-st.write("Corrige valores monetários aplicando a taxa SELIC:")
+st.write("Corrija valores monetários aplicando a taxa SELIC mensal:")
 
 st.divider()
 
@@ -99,7 +207,7 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     valor_digitado = st.number_input(
-        "**Valor base para o cálculo (R$):**", # O negrito aqui não afeta a cor via CSS
+        "**Valor base para o cálculo (R$):**",
         min_value=0.01,
         format="%.2f",
         value=1000.00
@@ -108,6 +216,8 @@ with col1:
 st.markdown("---")
 
 st.markdown("### **Selecione a Data de Vencimento:**")
+st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao selecionado, com um adicional de 1% ao total.")
+
 
 col_mes, col_ano = st.columns(2)
 
@@ -125,7 +235,7 @@ meses_selecao = list(meses_nomes.values())
 
 with col_mes:
     mes_selecionado_nome = st.selectbox(
-        "Mês:", # O negrito aqui não afeta a cor via CSS
+        "Mês:",
         options=meses_selecao,
         index=current_month - 1
     )
@@ -133,7 +243,7 @@ with col_mes:
 
 with col_ano:
     ano_selecionado = st.selectbox(
-        "Ano:", # O negrito aqui não afeta a cor via CSS
+        "Ano:",
         options=anos_disponiveis,
         index=0
     )
@@ -209,7 +319,6 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     for i in range(mes_inicial_num + 1, 13): 
         mes_nome = meses_colunas[i]
         
-        # Garante que a data não seja futura em relação à data atual (2025-07-30)
         if ano_inicial == datetime.now().year and i > datetime.now().month:
             break 
         

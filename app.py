@@ -257,7 +257,6 @@ st.divider()
 st.markdown("### **Selecione a Data de Vencimento:**")
 
 # O espaço entre o h3 e o divider é controlado pelo CSS do .stDivider e do .stMarkdown h3
-st.divider()
 
 col_mes, col_ano = st.columns(2)
 

@@ -256,8 +256,6 @@ st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 st.markdown("### **Selecione a Data de Vencimento:**") # Este h3 tem margin-top: 8px e margin-bottom: 8px
 
-st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
-
 col_mes, col_ano = st.columns(2)
 
 current_year = datetime.now().year

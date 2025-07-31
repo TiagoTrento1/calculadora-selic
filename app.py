@@ -215,7 +215,7 @@ st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
 # Ajuste das linhas divisórias
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 st.divider()
 st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
@@ -231,7 +231,7 @@ with col1:
     )
 
 # Ajuste das linhas divisórias
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 st.divider()
 st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
@@ -272,7 +272,7 @@ with col_ano:
 data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
 
 # Ajuste das linhas divisórias
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 st.divider()
 st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
 
@@ -383,7 +383,7 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
-st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 st.divider()
 st.markdown(
     """

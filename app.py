@@ -20,7 +20,7 @@ st.markdown(
         h1 {
             color: #003366; /* Azul escuro para o título principal */
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Reduzindo a margem inferior do título principal */
         }
 
         /* Labels dos inputs e selectboxes */
@@ -38,7 +38,7 @@ st.markdown(
             background-color: #004d99; /* Azul escuro para o fundo dos controles */
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* Reduzindo a margem inferior dos inputs/selectboxes */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
@@ -73,7 +73,7 @@ st.markdown(
             width: 100%;
             border: none;
             transition: background-color 0.3s ease;
-            margin-top: 20px;
+            margin-top: 15px; /* Ajustando a margem superior do botão */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .stButton>button:hover {
@@ -85,7 +85,7 @@ st.markdown(
         div[data-testid="stAlert"] {
             border-radius: 8px;
             padding: 15px;
-            margin-top: 20px;
+            margin-top: 15px; /* Ajustando a margem superior dos alerts */
             font-size: 1.1em;
             font-weight: bold;
         }
@@ -100,7 +100,7 @@ st.markdown(
             border-radius: 12px;
             border: 2px solid #007bff; /* Borda mais pronunciada */
             box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-            margin-top: 30px;
+            margin-top: 20px; /* Ajustando a margem superior do metric */
             text-align: center; /* Centraliza o conteúdo do metric */
         }
         [data-testid="stMetric"] label {
@@ -118,13 +118,19 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            /* AJUSTE AQUI: Reduzir margin-top para aproximar do texto acima */
-            margin: 5px 0 15px 0; /* top right bottom left */
+            margin: 8px 0; /* Margem padrão menor para todos os divisores */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
-        /* Ajuste também o h3 gerado por st.markdown("### ...") para reduzir sua margem inferior padrão */
+
+        /* Margem inferior para o st.write que acompanha o título principal */
+        .stMarkdown p:last-of-type { /* Seleciona o último parágrafo de st.markdown (o st.write) */
+            margin-bottom: 8px; /* Ajusta a margem para aproximar do divisor */
+        }
+
+        /* Margem para títulos h3 gerados por st.markdown("### ...") */
         .stMarkdown h3 {
-            margin-bottom: 10px; /* Reduz a margem inferior do título H3 */
+            margin-top: 15px; /* Margem superior para títulos de seção */
+            margin-bottom: 8px; /* Reduz a margem inferior do título H3 para aproximar do que vem depois */
         }
 
 
@@ -133,7 +139,7 @@ st.markdown(
             text-align: center;
             font-size: 0.9em;
             color: #666; /* Cor mais suave para o rodapé */
-            margin-top: 4em;
+            margin-top: 3em; /* Reduz a margem superior do rodapé */
             padding: 20px 0;
             border-top: 1px solid #eee;
         }
@@ -172,12 +178,13 @@ st.markdown(
 
             .stNumberInput, .stSelectbox {
                 padding: 10px; /* Reduz o padding dos inputs */
-                margin-bottom: 10px;
+                margin-bottom: 8px; /* Ajuste para telas menores */
             }
 
             .stButton>button {
                 padding: 0.6em 1em;
                 font-size: 1em;
+                margin-top: 10px; /* Ajuste para telas menores */
             }
 
             /* Quebra as colunas para empilhar em telas menores */
@@ -190,13 +197,24 @@ st.markdown(
 
             [data-testid="stMetric"] {
                 padding: 15px;
-                margin-top: 25px;
+                margin-top: 15px; /* Ajuste para telas menores */
             }
             [data-testid="stMetric"] label {
                 font-size: 1.1em !important;
             }
             [data-testid="stMetric"] div[data-testid="stMetricValue"] {
                 font-size: 2.8em !important;
+            }
+
+            .stDivider {
+                margin: 5px 0; /* Divisores mais próximos em telas menores */
+            }
+            .stMarkdown h3 {
+                margin-top: 10px; /* Títulos h3 mais próximos em telas menores */
+                margin-bottom: 5px;
+            }
+            .stMarkdown p:last-of-type {
+                margin-bottom: 5px;
             }
         }
 
@@ -220,9 +238,8 @@ st.markdown(
 st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
-# Ajuste aqui: Removendo o div de espaçamento extra, pois o CSS do .stDivider agora gerencia isso
+# Apenas o divisor, sem divs de espaçamento adicionais, pois o CSS já cuida
 st.divider()
-# st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Removido, pois o st.divider já tem margin-bottom
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -235,15 +252,12 @@ with col1:
         value=1000.00
     )
 
-# Ajuste aqui: Removendo o div de espaçamento extra, pois o CSS do .stDivider agora gerencia isso
 st.divider()
-# st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Removido
 
 st.markdown("### **Selecione a Data de Vencimento:**")
 
-# Ajuste aqui: O espaço entre o h3 acima e o divider é controlado pelo CSS do .stDivider e do .stMarkdown h3
+# O espaço entre o h3 e o divider é controlado pelo CSS do .stDivider e do .stMarkdown h3
 st.divider()
-# st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Removido
 
 col_mes, col_ano = st.columns(2)
 
@@ -276,9 +290,7 @@ with col_ano:
 
 data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
 
-# Ajuste aqui: Removendo o div de espaçamento extra, pois o CSS do .stDivider agora gerencia isso
 st.divider()
-# st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Removido
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):
@@ -388,8 +400,6 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-st.divider()
 st.markdown(
     """
     <div class="footer">

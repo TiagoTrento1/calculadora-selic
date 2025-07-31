@@ -169,7 +169,7 @@ def buscar_tabela_por_id(url, tabela_id):
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
     Processa a tabela de SELIC MENSAL, soma as taxas a partir do mês seguinte
-    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
+    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total. 
     """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',

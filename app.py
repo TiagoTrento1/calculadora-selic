@@ -38,7 +38,7 @@ st.markdown(
             background-color: #004d99; /* Azul escuro para o fundo dos controles */
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 5px; /* AJUSTE AQUI: Reduzindo a margem inferior dos inputs/selectboxes */
+            margin-bottom: 5px; /* Reduzindo a margem inferior dos inputs/selectboxes */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
@@ -129,7 +129,7 @@ st.markdown(
 
         /* Margem para títulos h3 gerados por st.markdown("### ...") */
         .stMarkdown h3 {
-            margin-top: 10px; /* AJUSTE AQUI: Reduzindo a margem superior do H3 */
+            margin-top: 5px; /* AJUSTE AQUI: Reduzindo ainda mais a margem superior do H3 */
             margin-bottom: 8px; /* Mantendo a margem inferior do título H3 */
         }
 
@@ -178,7 +178,7 @@ st.markdown(
 
             .stNumberInput, .stSelectbox {
                 padding: 10px; /* Reduz o padding dos inputs */
-                margin-bottom: 5px; /* AJUSTE AQUI: Ajuste para telas menores */
+                margin-bottom: 5px; /* Ajuste para telas menores */
             }
 
             .stButton>button {
@@ -210,7 +210,7 @@ st.markdown(
                 margin: 5px 0; /* Divisores mais próximos em telas menores */
             }
             .stMarkdown h3 {
-                margin-top: 5px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
+                margin-top: 3px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
                 margin-bottom: 5px;
             }
             .stMarkdown p:last-of-type {
@@ -238,7 +238,7 @@ st.markdown(
 st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
-st.divider() # O espaço aqui é controlado pelo CSS do p:last-of-type e .stDivider
+st.divider() 
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -251,9 +251,11 @@ with col1:
         value=1000.00
     )
 
-st.divider() # O espaço aqui é controlado pelo CSS do .stNumberInput e .stDivider
+st.divider() 
 
 st.markdown("### **Selecione a Data de Vencimento:**")
+
+st.divider() 
 
 col_mes, col_ano = st.columns(2)
 
@@ -295,7 +297,7 @@ def buscar_tabela_por_id(url, tabela_id):
     """
     try:
         response = requests.get(url, timeout=10)
-        response.raise_for_status() 
+        response.raise_raise_for_status() 
         soup = BeautifulSoup(response.text, 'html.parser')
         tabela_html = soup.find('table', id=tabela_id)
         
@@ -319,7 +321,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dezembro'
     }
 
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
@@ -396,7 +398,6 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
-# O rodapé ainda tem uma margem maior para separação do conteúdo principal.
 st.markdown(
     """
     <div class="footer">

@@ -130,7 +130,7 @@ st.markdown(
         /* Margem para títulos h3 gerados por st.markdown("### ...") */
         .stMarkdown h3 {
             margin-top: 5px; /* AJUSTE AQUI: Reduzindo ainda mais a margem superior do H3 */
-            margin-bottom: 8px; /* Mantendo a margem inferior do título H3 */
+            margin-bottom: 5px; /* Mantendo a margem inferior do título H3 */
         }
 
 

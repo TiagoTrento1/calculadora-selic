@@ -255,8 +255,6 @@ st.divider()
 
 st.markdown("### **Selecione a Data de Vencimento:**")
 
-st.divider() 
-
 col_mes, col_ano = st.columns(2)
 
 current_year = datetime.now().year

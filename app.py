@@ -212,12 +212,12 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC")
-st.write("Corrige valores monetários aplicando a taxa SELIC mensal:") # Texto inalterado
+st.write("Corrige valores monetários aplicando a taxa SELIC mensal:")
 
-# Primeiras alterações para uniformizar os divisores
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+# Usando st.divider() com margem CSS para uniformidade
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) 
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) 
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -230,9 +230,9 @@ with col1:
         value=1000.00
     )
 
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) 
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) 
 
 
 st.markdown("### **Selecione a Data de Vencimento:**")
@@ -241,14 +241,14 @@ st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao sel
 
 col_mes, col_ano = st.columns(2)
 
-current_year = datetime.now().year # Usando o ano atual do servidor
-current_month = datetime.now().month # Usando o mês atual do servidor
+current_year = datetime.now().year
+current_month = datetime.now().month
 
 anos_disponiveis = list(range(2000, current_year + 1))
 anos_disponiveis.reverse()
 
 meses_nomes = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
     7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 }
 meses_selecao = list(meses_nomes.values())
@@ -257,7 +257,7 @@ with col_mes:
     mes_selecionado_nome = st.selectbox(
         "Mês:",
         options=meses_selecao,
-        index=current_month - 1 # Seleciona o mês atual por padrão
+        index=current_month - 1
     )
     mes_selecionado_num = [k for k, v in meses_nomes.items() if v == mes_selecionado_nome][0]
 
@@ -265,12 +265,14 @@ with col_ano:
     ano_selecionado = st.selectbox(
         "Ano:",
         options=anos_disponiveis,
-        index=0 # Seleciona o ano atual por padrão (já que a lista está invertida)
+        index=0
     )
 
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
+
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True) 
 st.divider()
-st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) # Espaçamento
+st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True) 
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):
@@ -279,14 +281,11 @@ def buscar_tabela_por_id(url, tabela_id):
     """
     try:
         response = requests.get(url, timeout=10)
-        response.raise_for_status() # Levanta um HTTPError para respostas de erro (4xx ou 5xx)
+        response.raise_for_status() 
         soup = BeautifulSoup(response.text, 'html.parser')
         tabela_html = soup.find('table', id=tabela_id)
         
         if tabela_html:
-            # pd.read_html retorna uma lista de DataFrames, pegamos o primeiro [0]
-            # header=0 indica que a primeira linha é o cabeçalho
-            # thousands='.' e decimal=',' são importantes para ler números no formato BR
             tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
             return tabela
         else:
@@ -339,25 +338,21 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     dados_do_ano = linha_ano.iloc[0]
 
-    # Começa a somar do mês seguinte (mes_inicial_num + 1)
     for i in range(mes_inicial_num + 1, 13): 
         mes_nome = meses_colunas[i]
         
-        # Garante que a data não seja futura em relação à data atual do servidor
         if ano_inicial == datetime.now().year and i > datetime.now().month:
-            break # Não soma meses futuros no ano atual
+            break 
         
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
         else:
-            # Se a taxa não estiver disponível para um mês (NaN), para de somar
             break 
             
-    # --- ADIÇÃO DO 1% AO TOTAL DAS TAXAS SOMADAS ---
     taxa_total_somada += 1.0 
 
-    return taxa_total_somada, None # Retorna None para a lista de detalhes, pois não será usada.
+    return taxa_total_somada, None
 
 # --- Lógica Principal da Aplicação Streamlit ---
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
@@ -368,15 +363,13 @@ if st.button("Calcular"):
         tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
 
         if tabela_mensal is not None:
-            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada) # Ignora a segunda variável (detalhes)
+            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
 
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Exibe o total acumulado das taxas
                 st.info(f"**Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}:** {total_taxa:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
                 
-                # Exibe o valor final corrigido em destaque
                 st.metric(
                     label=f"**Valor Corrigido (R$):**",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
@@ -388,8 +381,7 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
-# Use um divisor e margem para o rodapé também, seguindo o padrão
-st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True) # Espaçamento antes do rodapé
+st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
 st.divider()
 st.markdown(
     """

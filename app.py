@@ -152,7 +152,7 @@ def buscar_tabela_por_id(url, tabela_id):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         tabela_html = soup.find('table', id=tabela_id)
-        
+
         if tabela_html:
             tabela = pd.read_html(str(tabela_html), header=0, decimal=',', thousands='.')[0]
             return tabela
@@ -169,7 +169,7 @@ def buscar_tabela_por_id(url, tabela_id):
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
     Processa a tabela de SELIC MENSAL, soma as taxas a partir do mês seguinte
-    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total. 
+    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
     """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
@@ -177,7 +177,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     }
 
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
-    
+
     if tabela_df.shape[1] < len(colunas_esperadas):
         st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
         return None, None
@@ -195,10 +195,9 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     mes_inicial_num = data_inicial.month
     ano_inicial = data_inicial.year
-    
+
     taxa_total_somada = 0.0
-    # Removida a lista de taxas_detalhadas pois não será exibida individualmente.
-    
+
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
@@ -207,28 +206,21 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     dados_do_ano = linha_ano.iloc[0]
 
-    # Começa a somar do mês seguinte (mes_inicial_num + 1)
-    for i in range(mes_inicial_num + 1, 13): 
+    for i in range(mes_inicial_num + 1, 13):
         mes_nome = meses_colunas[i]
-        
-        # Garante que a data não seja futura em relação à data atual (2025-07-30)
-        # Note: 'datetime.now()' pega a data e hora atual do servidor.
+
         if ano_inicial == datetime.now().year and i > datetime.now().month:
-            break # Não soma meses futuros no ano atual
-        
+            break
+
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
         else:
-            break 
-            
-    # --- ADIÇÃO DO 1% AO TOTAL DAS TAXAS SOMADAS ---
-    taxa_total_somada += 1.0 
-    # Não adicionamos mais ao 'taxas_detalhadas' pois não será exibido.
-    # -----------------------------------------------
+            break
 
-    # A função agora retorna apenas a taxa total, sem a lista de detalhes.
-    return taxa_total_somada, None # Retorna None para a lista de detalhes, pois não será usada.
+    taxa_total_somada += 1.0
+
+    return taxa_total_somada, None
 
 # --- Lógica Principal da Aplicação Streamlit ---
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
@@ -239,16 +231,15 @@ if st.button("Calcular"):
         tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
 
         if tabela_mensal is not None:
-            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada) # Ignora a segunda variável (detalhes)
+            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
 
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Exibe o total acumulado das taxas
-                st.info(f"**Taxa SELIC Total para {data_selecionada.strftime('%m/%Y')} (a partir do mês seguinte, com 1% adicional):**")
-                st.markdown(f"### **{total_taxa:,.2f}%**".replace('.', '#').replace(',', '.').replace('#', ','))
-                
-                # Exibe o valor final corrigido em destaque
+                # --- MUDANÇA AQUI: Nova frase de exibição ---
+                st.info(f"**Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}:** {total_taxa:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
+                # ---------------------------------------------
+
                 st.metric(
                     label=f"**Valor Corrigido (R$):**",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),

@@ -216,8 +216,6 @@ with col1:
 st.markdown("---")
 
 st.markdown("### **Selecione a Data de Vencimento:**")
-st.write("A SELIC acumulada será calculada **a partir do mês seguinte** ao selecionado, com um adicional de 1% ao total.")
-
 
 col_mes, col_ano = st.columns(2)
 

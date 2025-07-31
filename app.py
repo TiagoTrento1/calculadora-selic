@@ -38,7 +38,7 @@ st.markdown(
             background-color: #004d99; /* Azul escuro para o fundo dos controles */
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 10px; /* Reduzindo a margem inferior dos inputs/selectboxes */
+            margin-bottom: 5px; /* AJUSTE AQUI: Reduzindo a margem inferior dos inputs/selectboxes */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
@@ -118,19 +118,19 @@ st.markdown(
 
         /* Divisores */
         .stDivider {
-            margin: 8px 0; /* Margem padrão menor para todos os divisores */
+            margin: 8px 0; /* Margem padrão menor e uniforme para todos os divisores */
             border-top: 2px solid #ddd; /* Linha mais visível */
         }
 
         /* Margem inferior para o st.write que acompanha o título principal */
-        .stMarkdown p:last-of-type { /* Seleciona o último parágrafo de st.markdown (o st.write) */
+        .stMarkdown p:last-of-type { 
             margin-bottom: 8px; /* Ajusta a margem para aproximar do divisor */
         }
 
         /* Margem para títulos h3 gerados por st.markdown("### ...") */
         .stMarkdown h3 {
-            margin-top: 15px; /* Margem superior para títulos de seção */
-            margin-bottom: 8px; /* Reduz a margem inferior do título H3 para aproximar do que vem depois */
+            margin-top: 10px; /* AJUSTE AQUI: Reduzindo a margem superior do H3 */
+            margin-bottom: 8px; /* Mantendo a margem inferior do título H3 */
         }
 
 
@@ -178,7 +178,7 @@ st.markdown(
 
             .stNumberInput, .stSelectbox {
                 padding: 10px; /* Reduz o padding dos inputs */
-                margin-bottom: 8px; /* Ajuste para telas menores */
+                margin-bottom: 5px; /* AJUSTE AQUI: Ajuste para telas menores */
             }
 
             .stButton>button {
@@ -210,7 +210,7 @@ st.markdown(
                 margin: 5px 0; /* Divisores mais próximos em telas menores */
             }
             .stMarkdown h3 {
-                margin-top: 10px; /* Títulos h3 mais próximos em telas menores */
+                margin-top: 5px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
                 margin-bottom: 5px;
             }
             .stMarkdown p:last-of-type {
@@ -238,8 +238,7 @@ st.markdown(
 st.title("📈 Calculadora SELIC")
 st.write("Corrige valores monetários aplicando a taxa SELIC")
 
-# Apenas o divisor, sem divs de espaçamento adicionais, pois o CSS já cuida
-st.divider()
+st.divider() # O espaço aqui é controlado pelo CSS do p:last-of-type e .stDivider
 
 # --- Entrada de Dados do Usuário ---
 col1, col2 = st.columns([2, 1])
@@ -252,11 +251,11 @@ with col1:
         value=1000.00
     )
 
-st.divider()
+st.divider() # O espaço aqui é controlado pelo CSS do .stNumberInput e .stDivider
 
 st.markdown("### **Selecione a Data de Vencimento:**")
 
-# O espaço entre o h3 e o divider é controlado pelo CSS do .stDivider e do .stMarkdown h3
+st.divider() # O espaço aqui é controlado pelo CSS do .stMarkdown h3 e .stDivider
 
 col_mes, col_ano = st.columns(2)
 
@@ -322,7 +321,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dezembro'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
     }
 
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
@@ -399,6 +398,7 @@ if st.button("Calcular"):
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
 # --- Rodapé ---
+# O rodapé ainda tem uma margem maior para separação do conteúdo principal.
 st.markdown(
     """
     <div class="footer">

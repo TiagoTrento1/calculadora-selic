@@ -4,14 +4,29 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import base64
+import os
 
-# --- Imagem de fundo a partir da URL ---
-background_url = "https://www.latamairlines.com/content/dam/latamxp/sites/nuestra-flota/767/M3-INT-LTM_B767_Frontal-1024x683.jpg.transform/sm/image.jpg"
+# --- função para converter a imagem local em base64 ---
+# Esta função foi ajustada para ser mais robusta
+def get_base64_of_bin_file(bin_file):
+    if not os.path.exists(bin_file):
+        st.warning(f"Erro: Arquivo '{bin_file}' não encontrado. Verifique se o arquivo foi enviado para o repositório.")
+        return ""
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo: {e}")
+        return ""
 
-# --- Configuração da Página e CSS com background do avião LATAM ---
+# --- Pega o base64 da imagem de fundo ---
+img_base64 = get_base64_of_bin_file("background.png")
+img_data_url = f"data:image/png;base64,{img_base64}" if img_base64 else ""
+
+# --- Configuração da Página e CSS com background ---
 st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
-# --- O CSS foi alterado para usar a URL diretamente ---
 CHILE_CSS = f"""
 <style>
     :root {{
@@ -31,7 +46,7 @@ CHILE_CSS = f"""
         margin: 0;
         background: 
             linear-gradient(rgba(245,247,250,0.85), rgba(245,247,250,0.85)),
-            url("{background_url}") center/cover no-repeat;
+            url("{img_data_url}") center/cover no-repeat;
         background-attachment: fixed;
     }}
 
@@ -318,7 +333,7 @@ if st.button("Calcular"):
                     <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
                         Valor Corrigido (R$):
                     </div>
-                    <div style="font-size: 4em; font-weight: 900; color: #D52B1E; line-height:1;">
+                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
                         R$ {valor_corrigido:,.2f}
                     </div>
                 </div>

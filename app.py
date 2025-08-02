@@ -248,81 +248,87 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
             errors='coerce'
         )
 
-    mes_inicial_num = data_inicial.month
-    ano_inicial = data_inicial.year
+    ano_selecionado = data_inicial.year
+    mes_selecionado = data_inicial.month
+    ano_atual = datetime.now().year
+    mes_atual = datetime.now().month
+
     taxa_total_somada = 0.0
-    linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
-    if linha_ano.empty:
-        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
-        return 0.0, []
 
-    dados_do_ano = linha_ano.iloc[0]
-    for i in range(mes_inicial_num + 1, 13):
-        mes_nome = meses_colunas[i]
-        if ano_inicial == datetime.now().year and i > datetime.now().month:
-            break
-        if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
-            taxa_do_mes = dados_do_ano[mes_nome]
-            taxa_total_somada += taxa_do_mes
-        else:
-            break
+    # Se for ano atual, somar do mês seguinte até mês atual
+    if ano_selecionado == ano_atual:
+        linha_ano = tabela_df[tabela_df['Ano'] == ano_atual]
+        if linha_ano.empty:
+            st.warning(f"Não foram encontrados dados para o ano {ano_atual}.")
+            return 0.0, []
+        linha_ano = linha_ano.iloc[0]
 
-    taxa_total_somada += 1.0
-    return taxa_total_somada, None
+        mes_inicial = mes_selecionado + 1
+        if mes_inicial > mes_atual:
+            return 1.0, None  # Nenhuma taxa a somar (mês selecionado no futuro)
 
-# --- Cálculo ---
-url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
-id_tabela_mensal = "lstValoresMensais"
+        for m in range(mes_inicial, mes_atual + 1):
+            mes_nome = meses_colunas[m]
+            if pd.notna(linha_ano[mes_nome]):
+                taxa_total_somada += linha_ano[mes_nome]
 
-if st.button("Calcular"):
-    with st.spinner('Buscando dados e calculando...'):
-        tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
-        if tabela_mensal is not None:
-            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
-            if total_taxa is not None and total_taxa > 0:
-                valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
+    # Se for ano anterior, soma da taxa de dezembro daquele ano em diante até última taxa disponível
+    elif ano_selecionado < ano_atual:
+        anos_disponiveis = sorted(tabela_df['Ano'].unique())
+        anos_pos_selecao = [ano for ano in anos_disponiveis if ano >= ano_selecionado]
 
-                # Info box
-                info_html = f"""
-                <div style="
-                    background: #ffffff;
-                    border-left: 6px solid #0033A0;
-                    padding: 14px 16px;
-                    border-radius: 8px;
-                    color: #1f2d3a;
-                    font-weight: 600;
-                    font-size: 1em;
-                    margin-bottom: 8px;
-                ">
-                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
-                </div>
-                """
-                st.markdown(info_html, unsafe_allow_html=True)
+        # Somar dezembro do ano selecionado
+        linha_ano = tabela_df[tabela_df['Ano'] == ano_selecionado]
+        if linha_ano.empty:
+            st.warning(f"Não foram encontrados dados para o ano {ano_selecionado}.")
+            return 0.0, []
+        linha_ano = linha_ano.iloc[0]
+        if pd.notna(linha_ano['Dezembro']):
+            taxa_total_somada += linha_ano['Dezembro']
 
-                # Resultado com label centralizado e valor maior
-                resultado_html = f"""
-                <div style="
-                    background: #ffffff;
-                    padding: 28px 22px;
-                    border-radius: 14px;
-                    border: 2px solid #0033A0;
-                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
-                    margin-top: 10px;
-                    text-align: center;
-                    max-width: 500px;
-                    margin-left: auto;
-                    margin-right: auto;
-                ">
-                    <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
-                        Valor Corrigido (R$):
-                    </div>
-                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
-                        R$ {valor_corrigido:,.2f}
-                    </div>
-                </div>
-                """
-                st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
-            else:
-                st.warning("Não foi possível calcular com os dados disponíveis.")
-        else:
-            st.error("Falha ao carregar a tabela SELIC.")
+        # Somar meses de anos seguintes até faltar dado
+        for ano in anos_pos_selecao[1:]:
+            linha = tabela_df[tabela_df['Ano'] == ano]
+            if linha.empty:
+                continue
+            linha = linha.iloc[0]
+            for mes in range(1, 13):
+                mes_nome = meses_colunas[mes]
+                if pd.notna(linha[mes_nome]):
+                    taxa_total_somada += linha[mes_nome]
+                else:
+                    # Para de somar se faltar dado (último mês disponível)
+                    return taxa_total_somada + 1.0, None
+
+    else:
+        # Ano futuro selecionado - não aplica correção
+        return 1.0, None
+
+    return taxa_total_somada + 1.0, None
+
+def corrigir_valor(valor_inicial, data_vencimento):
+    # URL e IDs da tabela (ajuste se necessário)
+    url = "https://www3.bcb.gov.br/selic/"
+    tabela_id = "tabelaMensalSelic"  # ajustar para o ID correto da tabela mensal no site do BCB
+
+    tabela_mensal = buscar_tabela_por_id(url, tabela_id)
+    if tabela_mensal is None:
+        return None
+
+    fator_correção, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_vencimento)
+
+    if fator_correção is None:
+        st.warning("Não foi possível calcular o fator de correção.")
+        return None
+
+    valor_corrigido = valor_inicial * fator_correção
+    return valor_corrigido
+
+# --- Botão para calcular ---
+if st.button("Calcular Valor Corrigido"):
+    valor_corrigido = corrigir_valor(valor_digitado, data_selecionada)
+    if valor_corrigido is not None:
+        st.success(f"Valor corrigido pela taxa SELIC: R$ {valor_corrigido:,.2f}")
+    else:
+        st.error("Não foi possível calcular o valor corrigido.")
+

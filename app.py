@@ -264,7 +264,7 @@ st.markdown(
 
 # Label customizada com estilo igual ao "Selecione a Data de Vencimento"
 st.markdown(
-    '<p style="text-align: left; font-size: 1.1em; color: white; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$):</p>',
+    '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$)</p>',
     unsafe_allow_html=True
 )
 

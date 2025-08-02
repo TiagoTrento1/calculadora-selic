@@ -5,8 +5,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import base64
 
-# --- Removido: A função get_base64_of_bin_file não é mais necessária ---
-# --- A imagem de fundo agora é uma URL direta ---
+# --- Imagem de fundo a partir da URL ---
 background_url = "https://www.latamairlines.com/content/dam/latamxp/sites/nuestra-flota/767/M3-INT-LTM_B767_Frontal-1024x683.jpg.transform/sm/image.jpg"
 
 # --- Configuração da Página e CSS com background do avião LATAM ---

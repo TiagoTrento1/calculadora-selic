@@ -245,15 +245,23 @@ st.markdown(
 st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 # --- Entrada de Dados do Usuário ---
-col1, col2 = st.columns([2, 1])
+st.markdown(
+    """
+    <div style="display: flex; justify-content: center;">
+        <div style="width: 300px;">
+    """,
+    unsafe_allow_html=True
+)
 
-with col1:
-    valor_digitado = st.number_input(
-        "**Valor base para o cálculo (R$):**",
-        min_value=0.01,
-        format="%.2f",
-        value=1000.00
-    )
+valor_digitado = st.number_input(
+    "**Valor base para o cálculo (R$):**",
+    min_value=0.01,
+    format="%.2f",
+    value=1000.00,
+    key="valor_base_input"
+)
+
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 

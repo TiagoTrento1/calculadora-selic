@@ -111,25 +111,7 @@ CHILE_CSS = """
     }
 
     [data-testid="stMetric"] {
-        background: #eef6ff;
-        padding: 22px;
-        border-radius: 14px;
-        border: 2px solid var(--brand-blue);
-        box-shadow: var(--shadow);
-        margin-top: 22px;
-        text-align: center;
-    }
-    [data-testid="stMetric"] label {
-        font-size: 1.4em !important;
-        color: var(--brand-blue) !important;
-        font-weight: 700 !important;
-        margin-bottom: 8px;
-    }
-    [data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        font-size: 3.5em !important;
-        color: var(--brand-red) !important;
-        font-weight: 800 !important;
-        text-shadow: 1px 1px 4px rgba(0,0,0,0.08);
+        display: none;
     }
 
     .stDivider {
@@ -304,49 +286,43 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-               # Info box ajustado com texto escuro sobre fundo claro
-    info_html = f"""
-    <div style="
-        background: #ffffff;
-        border-left: 6px solid #0033A0;
-        padding: 14px 16px;
-        border-radius: 8px;
-        color: #1f2d3a;
-        font-weight: 600;
-        font-size: 1em;
-        margin-bottom: 8px;
-    ">
-        Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
-    </div>
-    """
-    st.markdown(info_html, unsafe_allow_html=True)
+                # Info box ajustado com texto escuro sobre fundo claro
+                info_html = f"""
+                <div style="
+                    background: #ffffff;
+                    border-left: 6px solid #0033A0;
+                    padding: 14px 16px;
+                    border-radius: 8px;
+                    color: #1f2d3a;
+                    font-weight: 600;
+                    font-size: 1em;
+                    margin-bottom: 8px;
+                ">
+                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+                </div>
+                """
+                st.markdown(info_html, unsafe_allow_html=True)
 
-    # Métrica customizada com label grande/negrito e valor destacado
-    valor_html = f"""
-    <div style="
-        background: #eef6ff;
-        padding: 22px;
-        border-radius: 14px;
-        border: 2px solid #0033A0;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        margin-top: 8px;
-        text-align: center;
-    ">
-        <div style="font-size: 1.6em; font-weight: 700; color: #0033A0; margin-bottom:6px;">
-            Valor Corrigido (R$):
-        </div>
-        <div style="font-size: 3.8em; font-weight: 800; color: #D52B1E; line-height:1;">
-            R$ {valor_corrigido:,.2f}
-        </div>
-    </div>
-    """
-    st.markdown(valor_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
-
-                st.metric(
-                    label="Valor Corrigido (R$):",
-                    value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
-                    delta_color="off"
-                )
+                # Métrica customizada com label maior e negrito e valor destacado
+                valor_html = f"""
+                <div style="
+                    background: #eef6ff;
+                    padding: 22px;
+                    border-radius: 14px;
+                    border: 2px solid #0033A0;
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+                    margin-top: 8px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 1.6em; font-weight: 700; color: #0033A0; margin-bottom:6px;">
+                        Valor Corrigido (R$):
+                    </div>
+                    <div style="font-size: 3.8em; font-weight: 800; color: #D52B1E; line-height:1;">
+                        R$ {valor_corrigido:,.2f}
+                    </div>
+                </div>
+                """
+                st.markdown(valor_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
             else:
                 st.warning("Não foi possível calcular com os dados disponíveis.")
         else:

@@ -9,7 +9,6 @@ import os
 # --- Configuração da Página e CSS sem background de imagem ---
 st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
-# O CSS foi simplificado, removendo a parte de background da imagem.
 CHILE_CSS = """
 <style>
     :root {
@@ -27,10 +26,9 @@ CHILE_CSS = """
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: var(--text);
         margin: 0;
-        background-color: var(--bg); /* Retorna ao background padrão */
+        background-color: var(--bg);
     }
     
-    /* Outros estilos específicos para Streamlit */
     [data-testid="stAppViewContainer"] > .main {
         background-color: var(--bg);
     }
@@ -142,7 +140,7 @@ st.markdown(CHILE_CSS, unsafe_allow_html=True)
 # --- Título e descrição ---
 st.title("📈 Calculadora SELIC")
 st.markdown(
-    '<p style="text-align: center; font-size: 1.1em; color: black; font-weight: bold;">Corrige valores monetários aplicando a taxa SELIC</p>',
+    '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold;">Corrige valores monetários aplicando a taxa SELIC</p>',
     unsafe_allow_html=True
 )
 
@@ -155,7 +153,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    '<p style="text-align: center; font-size: 1.1em; color: black; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$)</p>',
+    '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$)</p>',
     unsafe_allow_html=True
 )
 valor_digitado = st.number_input(
@@ -169,7 +167,7 @@ st.markdown("</div></div>", unsafe_allow_html=True)
 
 # --- Seleção de data de vencimento ---
 st.markdown(
-    '<p style="text-align: center; font-size: 1.1em; color: black; font-weight: bold;">Selecione a Data de Vencimento</p>',
+    '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold;">Selecione a Data de Vencimento</p>',
     unsafe_allow_html=True
 )
 col_mes, col_ano = st.columns(2)
@@ -318,7 +316,7 @@ if st.button("Calcular"):
                     <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
                         Valor Corrigido (R$):
                     </div>
-                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
+                    <div style="font-size: 4em; font-weight: 900; color: #D52B1E; line-height:1;">
                         R$ {valor_corrigido:,.2f}
                     </div>
                 </div>

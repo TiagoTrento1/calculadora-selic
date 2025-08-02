@@ -4,32 +4,31 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-# --- Configuração da Página e Estilos CSS da LATAM ---
+# --- Configuração da Página e Estilos CSS (bandeira do Chile / LATAM variante) ---
 st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
-LATAM_CSS = """
+CHILE_CSS = """
 <style>
     :root {
-        --latam-dark: #00306b;
-        --latam-primary: #e20674;
-        --latam-accent: #00a1e4;
-        --latam-bg: #f5f7fa;
-        --latam-surface: #ffffff;
-        --latam-text: #1f2d3a;
-        --latam-muted: #6f7a89;
+        --brand-blue: #0033A0;
+        --brand-red: #D52B1E;
+        --bg: #f5f7fa;
+        --surface: #ffffff;
+        --text: #1f2d3a;
+        --muted: #6f7a89;
         --radius: 10px;
         --shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--latam-text);
-        background: var(--latam-bg);
+        color: var(--text);
+        background: var(--bg);
         margin: 0;
     }
 
     h1 {
-        color: var(--latam-dark);
+        color: var(--brand-blue);
         text-align: center;
         margin-bottom: 10px;
         font-weight: 700;
@@ -39,13 +38,13 @@ LATAM_CSS = """
     div[data-testid="stSelectbox"] label,
     .stMarkdown h3 strong {
         font-weight: 600;
-        color: var(--latam-surface) !important;
+        color: var(--surface) !important;
         font-size: 1.1em;
         margin-bottom: 5px;
     }
 
     .stNumberInput, .stSelectbox {
-        background-color: var(--latam-dark);
+        background-color: var(--brand-blue);
         border-radius: var(--radius);
         padding: 16px;
         margin-bottom: 10px;
@@ -57,13 +56,13 @@ LATAM_CSS = """
     .stSelectbox div[data-baseweb="select"] input {
         color: #fff !important;
         background-color: transparent !important;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.25);
         border-radius: 6px;
         padding: 10px;
         font-weight: 500;
         outline: none !important;
         box-shadow: none !important;
-        caret-color: var(--latam-accent) !important;
+        caret-color: var(--brand-red) !important;
     }
 
     div[data-baseweb="select"] div[role="button"] {
@@ -74,7 +73,7 @@ LATAM_CSS = """
     }
 
     .stButton>button {
-        background: linear-gradient(135deg, var(--latam-primary) 0%, var(--latam-accent) 100%);
+        background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-blue) 100%);
         color: white;
         border-radius: var(--radius);
         padding: 0.85em 1.6em;
@@ -84,7 +83,7 @@ LATAM_CSS = """
         border: none;
         transition: filter .25s ease, transform .15s ease;
         margin-top: 15px;
-        box-shadow: 0 12px 24px rgba(226,6,116,0.35);
+        box-shadow: 0 12px 24px rgba(213,43,30,0.35);
     }
     .stButton>button:hover {
         filter: brightness(1.05);
@@ -101,9 +100,9 @@ LATAM_CSS = """
         margin-top: 15px;
         font-size: 1.05em;
         font-weight: 600;
-        background-color: var(--latam-surface);
-        border-left: 6px solid var(--latam-primary);
-        color: var(--latam-text);
+        background-color: var(--surface);
+        border-left: 6px solid var(--brand-blue);
+        color: var(--text);
         box-shadow: 0 6px 16px rgba(0,0,0,0.08);
     }
     div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
@@ -111,23 +110,23 @@ LATAM_CSS = """
     }
 
     [data-testid="stMetric"] {
-        background: #f0f8ff;
+        background: #eef6ff;
         padding: 22px;
         border-radius: 14px;
-        border: 2px solid var(--latam-accent);
+        border: 2px solid var(--brand-blue);
         box-shadow: var(--shadow);
         margin-top: 22px;
         text-align: center;
     }
     [data-testid="stMetric"] label {
         font-size: 1.4em !important;
-        color: var(--latam-dark) !important;
+        color: var(--brand-blue) !important;
         font-weight: 700;
         margin-bottom: 8px;
     }
     [data-testid="stMetric"] div[data-testid="stMetricValue"] {
         font-size: 3.5em !important;
-        color: var(--latam-primary) !important;
+        color: var(--brand-red) !important;
         font-weight: 800 !important;
         text-shadow: 1px 1px 4px rgba(0,0,0,0.08);
     }
@@ -143,41 +142,19 @@ LATAM_CSS = """
     .stMarkdown h3 {
         margin-top: 8px;
         margin-bottom: 8px;
-        color: var(--latam-dark);
+        color: var(--brand-blue);
     }
 
+    /* Rodapé minimalista (sem créditos) */
     .footer {
         text-align: center;
-        font-size: 0.9em;
-        color: var(--latam-muted);
-        margin-top: 3em;
-        padding: 24px 0;
+        font-size: 0.85em;
+        color: var(--muted);
+        margin-top: 2em;
+        padding: 20px 0;
         border-top: 1px solid rgba(0,0,0,0.05);
-        background: var(--latam-surface);
+        background: var(--surface);
         border-radius: 6px;
-    }
-
-    .linkedin-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background-color: var(--latam-dark);
-        color: white !important;
-        padding: 0.6em 1.2em;
-        border: none;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: filter .2s ease;
-    }
-    .linkedin-btn:hover {
-        filter: brightness(1.1);
-        text-decoration: none;
-    }
-    .linkedin-icon {
-        width: 20px;
-        height: 20px;
-        fill: white;
     }
 
     @media (max-width: 768px) {
@@ -200,7 +177,7 @@ LATAM_CSS = """
 </style>
 """
 
-st.markdown(LATAM_CSS, unsafe_allow_html=True)
+st.markdown(CHILE_CSS, unsafe_allow_html=True)
 
 # --- Título e descrição ---
 st.title("📈 Calculadora SELIC")
@@ -271,9 +248,6 @@ data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
 
 # --- Funções auxiliares ---
 def buscar_tabela_por_id(url, tabela_id):
-    """
-    Busca uma tabela HTML por ID em uma URL e a retorna como um DataFrame Pandas.
-    """
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -294,10 +268,6 @@ def buscar_tabela_por_id(url, tabela_id):
         return None
 
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
-    """
-    Processa a tabela de SELIC MENSAL, soma as taxas a partir do mês seguinte
-    ao inicial e dos meses subsequentes no mesmo ano, e adiciona 1% ao total.
-    """
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
         7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
@@ -336,7 +306,6 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     for i in range(mes_inicial_num + 1, 13):
         mes_nome = meses_colunas[i]
 
-        # Garante que a data não seja futura em relação à data atual do servidor
         if ano_inicial == datetime.now().year and i > datetime.now().month:
             break
 
@@ -350,7 +319,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     return taxa_total_somada, None
 
-# --- Lógica de cálculo ---
+# --- Cálculo ---
 url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.aspx"
 id_tabela_mensal = "lstValoresMensais"
 
@@ -376,17 +345,11 @@ if st.button("Calcular"):
         else:
             st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
 
-# --- Rodapé ---
+# --- Rodapé leve sem crédito ---
 st.markdown(
     """
     <div class="footer">
-        Desenvolvido por <strong>Tiago Trento</strong><br><br>
-        <a class="linkedin-btn" href="https://www.linkedin.com/in/tiago-trento/" target="_blank">
-            <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-                <path d="M100.28 448H7.4V148.9h92.88zm-46.44-340C24.35 108 0 83.66 0 53.64a53.64 53.64 0 0 1 53.64-53.64c29.92 0 53.64 24.35 53.64 53.64 0 30.02-24.35 54.36-53.64 54.36zM447.9 448h-92.68V302.4c0-34.7-12.4-58.4-43.24-58.4-23.6 0-37.6 15.8-43.8 31.1-2.2 5.3-2.8 12.7-2.8 20.1V448h-92.8s1.2-269.7 0-297.1h92.8v42.1c12.3-19 34.3-46.1 83.5-46.1 60.9 0 106.6 39.8 106.6 125.4V448z"/>
-            </svg>
-            Meu LinkedIn
-        </a>
+        Calculadora de correção baseada em SELIC.
     </div>
     """,
     unsafe_allow_html=True

@@ -253,12 +253,31 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- Entrada de Dados do Usuário ---
+st.markdown(
+    """
+    <div style="display: flex; justify-content: center;">
+        <div style="width: 300px;">
+    """,
+    unsafe_allow_html=True
+)
+
+# Label customizada com estilo igual ao "Selecione a Data de Vencimento"
+st.markdown(
+    '<p style="text-align: left; font-size: 1.1em; color: white; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$):</p>',
+    unsafe_allow_html=True
+)
+
+# number_input sem label visível
 valor_digitado = st.number_input(
-    "**Valor base para o cálculo (R$):**",
+    label="",
     min_value=0.01,
     format="%.2f",
-    value=1000.00
+    value=1000.00,
+    label_visibility="collapsed"
 )
+
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 st.markdown("</div></div>", unsafe_allow_html=True)

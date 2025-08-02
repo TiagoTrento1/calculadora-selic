@@ -187,7 +187,7 @@ anos_disponiveis.reverse()
 
 meses_nomes = {
     1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
-    7: 'Julho', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+    7: 'Julho', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
 }
 meses_selecao = list(meses_nomes.values())
 
@@ -232,7 +232,7 @@ def buscar_tabela_por_id(url, tabela_id):
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
     }
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
     if tabela_df.shape[1] < len(colunas_esperadas):
@@ -248,87 +248,104 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
             errors='coerce'
         )
 
-    ano_selecionado = data_inicial.year
-    mes_selecionado = data_inicial.month
-    ano_atual = datetime.now().year
-    mes_atual = datetime.now().month
+    ano_inicial = data_inicial.year
+    mes_inicial_num = data_inicial.month
 
     taxa_total_somada = 0.0
+    ano_mais_recente = tabela_df['Ano'].max()
 
-    # Se for ano atual, somar do mês seguinte até mês atual
-    if ano_selecionado == ano_atual:
+    # Percorrer do mês seguinte no ano selecionado até o último mês disponível no ano mais recente
+    ano_atual = ano_inicial
+    mes_atual = mes_inicial_num + 1
+
+    while True:
+        if ano_atual > ano_mais_recente:
+            break  # passou do último ano disponível
+
         linha_ano = tabela_df[tabela_df['Ano'] == ano_atual]
         if linha_ano.empty:
-            st.warning(f"Não foram encontrados dados para o ano {ano_atual}.")
-            return 0.0, []
-        linha_ano = linha_ano.iloc[0]
+            break  # não tem dados para esse ano, para evitar erro, interrompe
 
-        mes_inicial = mes_selecionado + 1
-        if mes_inicial > mes_atual:
-            return 1.0, None  # Nenhuma taxa a somar (mês selecionado no futuro)
+        dados_do_ano = linha_ano.iloc[0]
 
-        for m in range(mes_inicial, mes_atual + 1):
-            mes_nome = meses_colunas[m]
-            if pd.notna(linha_ano[mes_nome]):
-                taxa_total_somada += linha_ano[mes_nome]
+        if mes_atual > 12:
+            mes_atual = 1
+            ano_atual += 1
+            continue
 
-    # Se for ano anterior, soma da taxa de dezembro daquele ano em diante até última taxa disponível
-    elif ano_selecionado < ano_atual:
-        anos_disponiveis = sorted(tabela_df['Ano'].unique())
-        anos_pos_selecao = [ano for ano in anos_disponiveis if ano >= ano_selecionado]
+        mes_nome = meses_colunas[mes_atual]
 
-        # Somar dezembro do ano selecionado
-        linha_ano = tabela_df[tabela_df['Ano'] == ano_selecionado]
-        if linha_ano.empty:
-            st.warning(f"Não foram encontrados dados para o ano {ano_selecionado}.")
-            return 0.0, []
-        linha_ano = linha_ano.iloc[0]
-        if pd.notna(linha_ano['Dezembro']):
-            taxa_total_somada += linha_ano['Dezembro']
+        # Se ano_atual for o ano atual do sistema, não pegar meses futuros
+        hoje = datetime.now()
+        if ano_atual == hoje.year and mes_atual > hoje.month:
+            break
 
-        # Somar meses de anos seguintes até faltar dado
-        for ano in anos_pos_selecao[1:]:
-            linha = tabela_df[tabela_df['Ano'] == ano]
-            if linha.empty:
-                continue
-            linha = linha.iloc[0]
-            for mes in range(1, 13):
-                mes_nome = meses_colunas[mes]
-                if pd.notna(linha[mes_nome]):
-                    taxa_total_somada += linha[mes_nome]
-                else:
-                    # Para de somar se faltar dado (último mês disponível)
-                    return taxa_total_somada + 1.0, None
+        valor_taxa = dados_do_ano.get(mes_nome, None)
+        if pd.isna(valor_taxa):
+            break  # para se não tem taxa nesse mês
 
-    else:
-        # Ano futuro selecionado - não aplica correção
-        return 1.0, None
+        taxa_total_somada += valor_taxa
 
-    return taxa_total_somada + 1.0, None
+        mes_atual += 1
 
-def corrigir_valor(valor_inicial, data_vencimento):
-    # URL e IDs da tabela (ajuste se necessário)
-    url = "https://www3.bcb.gov.br/selic/"
-    tabela_id = "tabelaMensalSelic"  # ajustar para o ID correto da tabela mensal no site do BCB
+    # Somar 1 conforme seu cálculo anterior
+    taxa_total_somada += 1.0
 
-    tabela_mensal = buscar_tabela_por_id(url, tabela_id)
-    if tabela_mensal is None:
-        return None
+    return taxa_total_somada, None
 
-    fator_correção, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_vencimento)
-
-    if fator_correção is None:
-        st.warning("Não foi possível calcular o fator de correção.")
-        return None
-
-    valor_corrigido = valor_inicial * fator_correção
-    return valor_corrigido
+# URL e IDs usados
+url_selic = 'https://www3.bcb.gov.br/selic/serie/port/tabelaSelic'
+id_tabela_mensal = 'tabela-mensal'
 
 # --- Botão para calcular ---
-if st.button("Calcular Valor Corrigido"):
-    valor_corrigido = corrigir_valor(valor_digitado, data_selecionada)
-    if valor_corrigido is not None:
-        st.success(f"Valor corrigido pela taxa SELIC: R$ {valor_corrigido:,.2f}")
-    else:
-        st.error("Não foi possível calcular o valor corrigido.")
+if st.button("Calcular"):
+    with st.spinner('Buscando dados e calculando...'):
+        tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
+        if tabela_mensal is not None:
+            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
+            if total_taxa is not None and total_taxa > 0:
+                valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
+                info_html = f"""
+                <div style="
+                    background: #ffffff;
+                    border-left: 6px solid #0033A0;
+                    padding: 14px 16px;
+                    border-radius: 8px;
+                    color: #1f2d3a;
+                    font-weight: 600;
+                    font-size: 1em;
+                    margin-bottom: 8px;
+                ">
+                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+                </div>
+                """
+                st.markdown(info_html, unsafe_allow_html=True)
+
+                resultado_html = f"""
+                <div style="
+                    background: #ffffff;
+                    padding: 28px 22px;
+                    border-radius: 14px;
+                    border: 2px solid #0033A0;
+                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+                    margin-top: 10px;
+                    text-align: center;
+                    max-width: 500px;
+                    margin-left: auto;
+                    margin-right: auto;
+                ">
+                    <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
+                        Valor Corrigido (R$):
+                    </div>
+                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
+                        R$ {valor_corrigido:,.2f}
+                    </div>
+                </div>
+                """
+                # Ajusta para formato brasileiro (troca '.' por ',' e vice-versa)
+                st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
+            else:
+                st.warning("Não foi possível calcular com os dados disponíveis.")
+        else:
+            st.error("Falha ao carregar a tabela SELIC.")

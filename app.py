@@ -7,7 +7,6 @@ import base64
 import os
 
 # --- função para converter a imagem local em base64 ---
-# Esta função foi ajustada para ser mais robusta
 def get_base64_of_bin_file(bin_file):
     if not os.path.exists(bin_file):
         st.warning(f"Erro: Arquivo '{bin_file}' não encontrado. Verifique se o arquivo foi enviado para o repositório.")
@@ -40,10 +39,8 @@ CHILE_CSS = f"""
         --shadow: 0 8px 20px rgba(0,0,0,0.08);
     }}
 
-    body {{
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: var(--text);
-        margin: 0;
+    /* Estilo para o background do aplicativo Streamlit */
+    [data-testid="stAppViewContainer"] > .main {{
         background: 
             linear-gradient(rgba(245,247,250,0.85), rgba(245,247,250,0.85)),
             url("{img_data_url}") center/cover no-repeat;

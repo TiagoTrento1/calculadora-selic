@@ -320,7 +320,7 @@ if st.button("Calcular"):
                     <div style="font-size: 2.2em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
                         Valor Corrigido (R$):
                     </div>
-                    <div style="font-size: 6em; font-weight: 900; color: #D52B1E; line-height:1;">
+                    <div style="font-size: 4em; font-weight: 900; color: #D52B1E; line-height:1;">
                         R$ {valor_corrigido:,.2f}
                     </div>
                 </div>

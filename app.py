@@ -1,23 +1,25 @@
-import base64
-
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-
 import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import base64
 
-# --- Configuração da Página e Estilos CSS (bandeira do Chile / LATAM variante) ---
+# --- função para converter a imagem local em base64 ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# --- pega o base64 da imagem latam.jpg (deve estar na mesma pasta) ---
+img_base64 = get_base64_of_bin_file("latam.jpg")
+
+# --- Configuração da Página e CSS com background do avião LATAM ---
 st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
-CHILE_CSS = """
+CHILE_CSS = f"""
 <style>
-    :root {
+    :root {{
         --brand-blue: #0033A0;
         --brand-red: #D52B1E;
         --bg: #f5f7fa;
@@ -26,45 +28,45 @@ CHILE_CSS = """
         --muted: #6f7a89;
         --radius: 10px;
         --shadow: 0 8px 20px rgba(0,0,0,0.08);
-    }
+    }}
 
-    body {
+    body {{
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: var(--text);
         margin: 0;
         background: 
             linear-gradient(rgba(245,247,250,0.85), rgba(245,247,250,0.85)),
-            url('https://flapinternational.com.br/wp-content/uploads/2024/02/LATAM.jpg') center/cover no-repeat;
+            url("data:image/jpg;base64,{img_base64}") center/cover no-repeat;
         background-attachment: fixed;
-    }
+    }}
 
-    h1 {
+    h1 {{
         color: var(--brand-blue);
         text-align: center;
         margin-bottom: 10px;
         font-weight: 700;
-    }
+    }}
 
     div[data-testid="stNumberInput"] label,
     div[data-testid="stSelectbox"] label,
-    .stMarkdown h3 strong {
+    .stMarkdown h3 strong {{
         font-weight: 600;
         color: var(--surface) !important;
         font-size: 1.1em;
         margin-bottom: 5px;
-    }
+    }}
 
-    .stNumberInput, .stSelectbox {
+    .stNumberInput, .stSelectbox {{
         background-color: var(--brand-blue);
         border-radius: var(--radius);
         padding: 16px;
         margin-bottom: 10px;
         box-shadow: var(--shadow);
         position: relative;
-    }
+    }}
 
     .stNumberInput input,
-    .stSelectbox div[data-baseweb="select"] input {
+    .stSelectbox div[data-baseweb="select"] input {{
         color: #fff !important;
         background-color: transparent !important;
         border: 1px solid rgba(255,255,255,0.25);
@@ -74,16 +76,16 @@ CHILE_CSS = """
         outline: none !important;
         box-shadow: none !important;
         caret-color: var(--brand-red) !important;
-    }
+    }}
 
-    div[data-baseweb="select"] div[role="button"] {
+    div[data-baseweb="select"] div[role="button"] {{
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
         background: transparent !important;
-    }
+    }}
 
-    .stButton>button {
+    .stButton>button {{
         background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-red) 100%);
         color: white;
         border-radius: var(--radius);
@@ -95,18 +97,18 @@ CHILE_CSS = """
         transition: filter .25s ease, transform .15s ease;
         margin-top: 15px;
         box-shadow: 0 12px 24px rgba(213,43,30,0.35);
-    }
-    .stButton>button:hover {
+    }}
+    .stButton>button:hover {{
         background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-blue) 100%);
         filter: brightness(1.05);
         cursor: pointer;
         transform: translateY(-1px);
-    }
-    .stButton>button:active {
+    }}
+    .stButton>button:active {{
         transform: translateY(1px);
-    }
+    }}
 
-    div[data-testid="stAlert"] {
+    div[data-testid="stAlert"] {{
         border-radius: var(--radius);
         padding: 16px;
         margin-top: 15px;
@@ -116,28 +118,27 @@ CHILE_CSS = """
         border-left: 6px solid var(--brand-blue);
         color: var(--text) !important;
         box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-    }
-    div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
+    }}
+    div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {{
         color: var(--text) !important;
-    }
+    }}
 
-    [data-testid="stMetric"] {
+    [data-testid="stMetric"] {{
         display: none;
-    }
+    }}
 
-    .stDivider {
+    .stDivider {{
         margin: 12px 0;
         border-top: 2px solid rgba(0,0,0,0.08);
-    }
-
-    .stMarkdown p:last-of-type {
+    }}
+    .stMarkdown p:last-of-type {{
         margin-bottom: 8px;
-    }
-    .stMarkdown h3 {
+    }}
+    .stMarkdown h3 {{
         margin-top: 8px;
         margin-bottom: 8px;
         color: var(--brand-blue);
-    }
+    }}
 </style>
 """
 
@@ -158,12 +159,10 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 st.markdown(
     '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold; margin-bottom: 5px;">Valor base para o cálculo (R$)</p>',
     unsafe_allow_html=True
 )
-
 valor_digitado = st.number_input(
     label="",
     min_value=0.01,
@@ -171,7 +170,6 @@ valor_digitado = st.number_input(
     value=1000.00,
     label_visibility="collapsed"
 )
-
 st.markdown("</div></div>", unsafe_allow_html=True)
 
 # --- Seleção de data de vencimento ---
@@ -188,8 +186,8 @@ anos_disponiveis = list(range(2000, current_year + 1))
 anos_disponiveis.reverse()
 
 meses_nomes = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
-    7: 'Julho', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 }
 meses_selecao = list(meses_nomes.values())
 
@@ -234,20 +232,16 @@ def buscar_tabela_por_id(url, tabela_id):
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
     }
-
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
-
     if tabela_df.shape[1] < len(colunas_esperadas):
         st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
         return None, None
 
     tabela_df.columns = colunas_esperadas
-
     tabela_df['Ano'] = pd.to_numeric(tabela_df['Ano'], errors='coerce')
     tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'})
-
     for mes_nome in meses_colunas.values():
         tabela_df[mes_nome] = pd.to_numeric(
             tabela_df[mes_nome].astype(str).str.replace(',', '.'),
@@ -256,23 +250,17 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
 
     mes_inicial_num = data_inicial.month
     ano_inicial = data_inicial.year
-
     taxa_total_somada = 0.0
-
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
-
     if linha_ano.empty:
         st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
         return 0.0, []
 
     dados_do_ano = linha_ano.iloc[0]
-
     for i in range(mes_inicial_num + 1, 13):
         mes_nome = meses_colunas[i]
-
         if ano_inicial == datetime.now().year and i > datetime.now().month:
             break
-
         if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
             taxa_do_mes = dados_do_ano[mes_nome]
             taxa_total_somada += taxa_do_mes
@@ -280,7 +268,6 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
             break
 
     taxa_total_somada += 1.0
-
     return taxa_total_somada, None
 
 # --- Cálculo ---
@@ -290,14 +277,12 @@ id_tabela_mensal = "lstValoresMensais"
 if st.button("Calcular"):
     with st.spinner('Buscando dados e calculando...'):
         tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
-
         if tabela_mensal is not None:
             total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
-
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Info box ajustado com texto escuro sobre fundo claro
+                # Info box
                 info_html = f"""
                 <div style="
                     background: #ffffff;
@@ -314,7 +299,7 @@ if st.button("Calcular"):
                 """
                 st.markdown(info_html, unsafe_allow_html=True)
 
-                # Resultado com label centralizado e maior, valor em reais bem grande
+                # Resultado com label centralizado e valor maior
                 resultado_html = f"""
                 <div style="
                     background: #ffffff;
@@ -328,10 +313,10 @@ if st.button("Calcular"):
                     margin-left: auto;
                     margin-right: auto;
                 ">
-                    <div style="font-size: 2.2em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
+                    <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
                         Valor Corrigido (R$):
                     </div>
-                    <div style="font-size: 4em; font-weight: 900; color: #D52B1E; line-height:1;">
+                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
                         R$ {valor_corrigido:,.2f}
                     </div>
                 </div>

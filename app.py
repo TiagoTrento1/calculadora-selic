@@ -7,9 +7,13 @@ import base64
 
 # --- função para converter a imagem local em base64 ---
 def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except FileNotFoundError:
+        st.error(f"Erro: Arquivo '{bin_file}' não encontrado. Certifique-se de que a imagem está na mesma pasta.")
+        return None
 
 # --- pega o base64 da imagem latam.jpg (deve estar na mesma pasta) ---
 img_base64 = get_base64_of_bin_file("latam.jpg")
@@ -186,8 +190,8 @@ anos_disponiveis = list(range(2000, current_year + 1))
 anos_disponiveis.reverse()
 
 meses_nomes = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
-    7: 'Julho', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 }
 meses_selecao = list(meses_nomes.values())
 
@@ -230,43 +234,59 @@ def buscar_tabela_por_id(url, tabela_id):
         return None
 
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
-    meses_colunas = {
+    meses_colunas_map = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
     }
-    colunas_esperadas = ['Ano'] + list(meses_colunas.values())
-    if tabela_df.shape[1] < len(colunas_esperadas):
-        st.error("A estrutura da tabela mensal é inesperada. Verifique as colunas.")
-        return None, None
-
-    tabela_df.columns = colunas_esperadas
+    
+    # Padroniza as colunas da tabela para fácil acesso
+    tabela_df.columns = ['Ano'] + list(meses_colunas_map.values())
     tabela_df['Ano'] = pd.to_numeric(tabela_df['Ano'], errors='coerce')
     tabela_df = tabela_df.dropna(subset=['Ano']).astype({'Ano': 'int'})
-    for mes_nome in meses_colunas.values():
+
+    # Converte as colunas de meses para numérico
+    for mes_nome in meses_colunas_map.values():
         tabela_df[mes_nome] = pd.to_numeric(
             tabela_df[mes_nome].astype(str).str.replace(',', '.'),
             errors='coerce'
         )
 
+    # Inicia o cálculo
     mes_inicial_num = data_inicial.month
     ano_inicial = data_inicial.year
     taxa_total_somada = 0.0
-    linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
-    if linha_ano.empty:
-        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
-        return 0.0, []
+    
+    # Mês atual e ano atual para parar o cálculo
+    hoje = datetime.now()
+    ano_atual = hoje.year
+    mes_atual = hoje.month
 
-    dados_do_ano = linha_ano.iloc[0]
-    for i in range(mes_inicial_num + 1, 13):
-        mes_nome = meses_colunas[i]
-        if ano_inicial == datetime.now().year and i > datetime.now().month:
-            break
-        if mes_nome in dados_do_ano and pd.notna(dados_do_ano[mes_nome]):
-            taxa_do_mes = dados_do_ano[mes_nome]
-            taxa_total_somada += taxa_do_mes
-        else:
-            break
-
+    # Itera de forma contínua, ano a ano e mês a mês
+    for ano in range(ano_inicial, ano_atual + 1):
+        linha_ano = tabela_df[tabela_df['Ano'] == ano]
+        if linha_ano.empty:
+            st.warning(f"Não foram encontrados dados para o ano {ano}.")
+            continue
+        
+        dados_do_ano = linha_ano.iloc[0]
+        
+        # Define o mês de início do loop para o ano atual e anos posteriores
+        inicio_loop = mes_inicial_num + 1 if ano == ano_inicial else 1
+        
+        # Define o mês de fim do loop
+        fim_loop = mes_atual + 1 if ano == ano_atual else 13
+        
+        for mes_num in range(inicio_loop, fim_loop):
+            mes_nome_abreviado = meses_colunas_map[mes_num]
+            if mes_nome_abreviado in dados_do_ano and pd.notna(dados_do_ano[mes_nome_abreviado]):
+                taxa_do_mes = dados_do_ano[mes_nome_abreviado]
+                taxa_total_somada += taxa_do_mes
+            else:
+                # Interrompe o cálculo se um mês não tem dado, pois os próximos também não terão
+                st.warning(f"Cálculo interrompido: Taxa não encontrada para {meses_nomes[mes_num]}/{ano}.")
+                return None, f"Taxa de {meses_nomes[mes_num]}/{ano} não encontrada."
+    
+    # Adiciona o 1%
     taxa_total_somada += 1.0
     return taxa_total_somada, None
 
@@ -275,54 +295,59 @@ url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.
 id_tabela_mensal = "lstValoresMensais"
 
 if st.button("Calcular"):
-    with st.spinner('Buscando dados e calculando...'):
-        tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
-        if tabela_mensal is not None:
-            total_taxa, _ = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
-            if total_taxa is not None and total_taxa > 0:
-                valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
+    if not img_base64:
+        st.error("Não foi possível carregar a imagem de fundo. Verifique o arquivo `latam.jpg`.")
+    else:
+        with st.spinner('Buscando dados e calculando...'):
+            tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
+            if tabela_mensal is not None:
+                total_taxa, erro_msg = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
+                if erro_msg:
+                    st.warning(erro_msg)
+                elif total_taxa is not None and total_taxa > 0:
+                    valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Info box
-                info_html = f"""
-                <div style="
-                    background: #ffffff;
-                    border-left: 6px solid #0033A0;
-                    padding: 14px 16px;
-                    border-radius: 8px;
-                    color: #1f2d3a;
-                    font-weight: 600;
-                    font-size: 1em;
-                    margin-bottom: 8px;
-                ">
-                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
-                </div>
-                """
-                st.markdown(info_html, unsafe_allow_html=True)
+                    # Info box
+                    info_html = f"""
+                    <div style="
+                        background: #ffffff;
+                        border-left: 6px solid #0033A0;
+                        padding: 14px 16px;
+                        border-radius: 8px;
+                        color: #1f2d3a;
+                        font-weight: 600;
+                        font-size: 1em;
+                        margin-bottom: 8px;
+                    ">
+                        Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+                    </div>
+                    """
+                    st.markdown(info_html, unsafe_allow_html=True)
 
-                # Resultado com label centralizado e valor maior
-                resultado_html = f"""
-                <div style="
-                    background: #ffffff;
-                    padding: 28px 22px;
-                    border-radius: 14px;
-                    border: 2px solid #0033A0;
-                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
-                    margin-top: 10px;
-                    text-align: center;
-                    max-width: 500px;
-                    margin-left: auto;
-                    margin-right: auto;
-                ">
-                    <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
-                        Valor Corrigido (R$):
+                    # Resultado com label centralizado e valor maior
+                    resultado_html = f"""
+                    <div style="
+                        background: #ffffff;
+                        padding: 28px 22px;
+                        border-radius: 14px;
+                        border: 2px solid #0033A0;
+                        box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+                        margin-top: 10px;
+                        text-align: center;
+                        max-width: 500px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    ">
+                        <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
+                            Valor Corrigido (R$):
+                        </div>
+                        <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
+                            R$ {valor_corrigido:,.2f}
+                        </div>
                     </div>
-                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
-                        R$ {valor_corrigido:,.2f}
-                    </div>
-                </div>
-                """
-                st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
+                    """
+                    st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
+                else:
+                    st.warning("Não foi possível calcular com os dados disponíveis.")
             else:
-                st.warning("Não foi possível calcular com os dados disponíveis.")
-        else:
-            st.error("Falha ao carregar a tabela SELIC.")
+                st.error("Falha ao carregar a tabela SELIC.")

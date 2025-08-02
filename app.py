@@ -73,7 +73,7 @@ CHILE_CSS = """
     }
 
     .stButton>button {
-        background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-blue) 100%);
+        background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-red) 100%);
         color: white;
         border-radius: var(--radius);
         padding: 0.85em 1.6em;
@@ -86,6 +86,7 @@ CHILE_CSS = """
         box-shadow: 0 12px 24px rgba(213,43,30,0.35);
     }
     .stButton>button:hover {
+        background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-blue) 100%);
         filter: brightness(1.05);
         cursor: pointer;
         transform: translateY(-1px);
@@ -303,14 +304,25 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                st.info(
-                    f"<span style='color:#1f2d3a; font-weight:600;'>Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%</span>"
-                    .replace('.', '#').replace(',', '.').replace('#', ','),
-                    unsafe_allow_html=True
-                )
-                
+                # Info box ajustado com texto escuro sobre fundo claro
+                info_html = f"""
+                <div style="
+                    background: #ffffff;
+                    border-left: 6px solid #0033A0;
+                    padding: 14px 16px;
+                    border-radius: 8px;
+                    color: #1f2d3a;
+                    font-weight: 600;
+                    font-size: 1em;
+                    margin-bottom: 4px;
+                ">
+                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+                </div>
+                """
+                st.markdown(info_html, unsafe_allow_html=True)
+
                 st.metric(
-                    label="**Valor Corrigido (R$):**",
+                    label="Valor Corrigido (R$):",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
                     delta_color="off"
                 )

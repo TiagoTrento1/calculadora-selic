@@ -240,7 +240,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 # --- Entrada de Dados do Usuário ---
 st.markdown(
@@ -280,7 +279,6 @@ st.markdown("</div></div>", unsafe_allow_html=True)
 
 st.markdown("</div></div>", unsafe_allow_html=True)
 
-st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 
 st.markdown(
     '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold;">Selecione a Data de Vencimento</p>',
@@ -316,8 +314,6 @@ with col_ano:
     )
 
 data_selecionada = datetime(ano_selecionado, mes_selecionado_num, 1).date()
-
-st.divider()
 
 # --- Funções de Web Scraping e Processamento de Dados ---
 def buscar_tabela_por_id(url, tabela_id):

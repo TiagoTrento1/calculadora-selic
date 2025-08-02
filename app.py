@@ -303,27 +303,29 @@ if st.button("Calcular"):
                 """
                 st.markdown(info_html, unsafe_allow_html=True)
 
-                # Métrica customizada com fundo branco e valor em reais ainda maior
-                valor_html = f"""
+                # Resultado com label centralizado e maior, valor em reais bem grande
+                resultado_html = f"""
                 <div style="
                     background: #ffffff;
-                    border-left: 6px solid #0033A0;
-                    padding: 14px 16px;
-                    border-radius: 8px;
-                    color: #1f2d3a;
-                    font-weight: 600;
-                    font-size: 1em;
-                    margin-bottom: 8px;
+                    padding: 28px 22px;
+                    border-radius: 14px;
+                    border: 2px solid #0033A0;
+                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+                    margin-top: 10px;
+                    text-align: center;
+                    max-width: 500px;
+                    margin-left: auto;
+                    margin-right: auto;
                 ">
-                    <div style="font-size: 1.8em; font-weight: 700; color: #0033A0; margin-bottom:10px;">
+                    <div style="font-size: 2.2em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
                         Valor Corrigido (R$):
                     </div>
-                    <div style="font-size: 5.2em; font-weight: 800; color: #D52B1E; line-height:1;">
+                    <div style="font-size: 6em; font-weight: 900; color: #D52B1E; line-height:1;">
                         R$ {valor_corrigido:,.2f}
                     </div>
                 </div>
                 """
-                st.markdown(valor_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
+                st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
             else:
                 st.warning("Não foi possível calcular com os dados disponíveis.")
         else:

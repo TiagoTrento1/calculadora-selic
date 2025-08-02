@@ -186,8 +186,8 @@ anos_disponiveis = list(range(2000, current_year + 1))
 anos_disponiveis.reverse()
 
 meses_nomes = {
-    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
-    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Mai', 6: 'Junho',
+    7: 'Julho', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
 }
 meses_selecao = list(meses_nomes.values())
 
@@ -232,7 +232,7 @@ def buscar_tabela_por_id(url, tabela_id):
 def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     meses_colunas = {
         1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Novembro', 12: 'Dezembro'
     }
     colunas_esperadas = ['Ano'] + list(meses_colunas.values())
     if tabela_df.shape[1] < len(colunas_esperadas):

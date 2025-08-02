@@ -304,22 +304,43 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                # Info box ajustado com texto escuro sobre fundo claro
-                info_html = f"""
-                <div style="
-                    background: #ffffff;
-                    border-left: 6px solid #0033A0;
-                    padding: 14px 16px;
-                    border-radius: 8px;
-                    color: #1f2d3a;
-                    font-weight: 600;
-                    font-size: 1em;
-                    margin-bottom: 4px;
-                ">
-                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
-                </div>
-                """
-                st.markdown(info_html, unsafe_allow_html=True)
+               # Info box ajustado com texto escuro sobre fundo claro
+    info_html = f"""
+    <div style="
+        background: #ffffff;
+        border-left: 6px solid #0033A0;
+        padding: 14px 16px;
+        border-radius: 8px;
+        color: #1f2d3a;
+        font-weight: 600;
+        font-size: 1em;
+        margin-bottom: 8px;
+    ">
+        Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+    </div>
+    """
+    st.markdown(info_html, unsafe_allow_html=True)
+
+    # Métrica customizada com label grande/negrito e valor destacado
+    valor_html = f"""
+    <div style="
+        background: #eef6ff;
+        padding: 22px;
+        border-radius: 14px;
+        border: 2px solid #0033A0;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        margin-top: 8px;
+        text-align: center;
+    ">
+        <div style="font-size: 1.6em; font-weight: 700; color: #0033A0; margin-bottom:6px;">
+            Valor Corrigido (R$):
+        </div>
+        <div style="font-size: 3.8em; font-weight: 800; color: #D52B1E; line-height:1;">
+            R$ {valor_corrigido:,.2f}
+        </div>
+    </div>
+    """
+    st.markdown(valor_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
 
                 st.metric(
                     label="Valor Corrigido (R$):",

@@ -102,11 +102,11 @@ CHILE_CSS = """
         font-weight: 600;
         background-color: var(--surface);
         border-left: 6px solid var(--brand-blue);
-        color: var(--text);
+        color: var(--text) !important;
         box-shadow: 0 6px 16px rgba(0,0,0,0.08);
     }
     div[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
-        color: inherit !important;
+        color: var(--text) !important;
     }
 
     [data-testid="stMetric"] {
@@ -121,7 +121,7 @@ CHILE_CSS = """
     [data-testid="stMetric"] label {
         font-size: 1.4em !important;
         color: var(--brand-blue) !important;
-        font-weight: 700;
+        font-weight: 700 !important;
         margin-bottom: 8px;
     }
     [data-testid="stMetric"] div[data-testid="stMetricValue"] {
@@ -143,36 +143,6 @@ CHILE_CSS = """
         margin-top: 8px;
         margin-bottom: 8px;
         color: var(--brand-blue);
-    }
-
-    /* Rodapé minimalista (sem créditos) */
-    .footer {
-        text-align: center;
-        font-size: 0.85em;
-        color: var(--muted);
-        margin-top: 2em;
-        padding: 20px 0;
-        border-top: 1px solid rgba(0,0,0,0.05);
-        background: var(--surface);
-        border-radius: 6px;
-    }
-
-    @media (max-width: 768px) {
-        h1 { font-size: 2em; }
-        .stNumberInput, .stSelectbox { padding: 12px; margin-bottom: 8px; }
-        .stButton>button { padding: 0.65em 1em; font-size: 1em; margin-top: 12px; }
-        div[data-testid="stColumns"] { flex-direction: column; }
-        div[data-testid="stColumns"] > div { width: 100% !important; }
-        [data-testid="stMetric"] { padding: 16px; margin-top: 16px; }
-        [data-testid="stMetric"] label { font-size: 1.1em !important; }
-        [data-testid="stMetric"] div[data-testid="stMetricValue"] { font-size: 2.8em !important; }
-        .stMarkdown h3 { margin-top: 5px; margin-bottom: 5px; }
-        .stMarkdown p:last-of-type { margin-bottom: 5px; }
-    }
-    @media (max-width: 480px) {
-        h1 { font-size: 1.8em; }
-        .stNumberInput input, .stSelectbox div[data-baseweb="select"] input { font-size: 0.9em; }
-        [data-testid="stMetric"] div[data-testid="stMetricValue"] { font-size: 2.2em !important; }
     }
 </style>
 """
@@ -298,7 +268,7 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
     linha_ano = tabela_df[tabela_df['Ano'] == ano_inicial]
 
     if linha_ano.empty:
-        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal. Certifique-se de que o ano selecionado está presente nos dados da SELIC.")
+        st.warning(f"Não foram encontrados dados para o ano {ano_inicial} na tabela mensal.")
         return 0.0, []
 
     dados_do_ano = linha_ano.iloc[0]
@@ -333,24 +303,18 @@ if st.button("Calcular"):
             if total_taxa is not None and total_taxa > 0:
                 valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                st.info(f"**Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}:** {total_taxa:,.2f}%".replace('.', '#').replace(',', '.').replace('#', ','))
+                st.info(
+                    f"<span style='color:#1f2d3a; font-weight:600;'>Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%</span>"
+                    .replace('.', '#').replace(',', '.').replace('#', ','),
+                    unsafe_allow_html=True
+                )
                 
                 st.metric(
-                    label=f"**Valor Corrigido (R$):**",
+                    label="**Valor Corrigido (R$):**",
                     value=f"R$ {valor_corrigido:,.2f}".replace('.', '#').replace(',', '.').replace('#', ','),
                     delta_color="off"
                 )
             else:
-                st.warning(f"Não foi possível calcular. Verifique se há dados disponíveis para o ano de {data_selecionada.year} a partir do mês seguinte ao selecionado, ou se a data é muito recente/futura.")
+                st.warning("Não foi possível calcular com os dados disponíveis.")
         else:
-            st.error("Falha ao carregar a tabela SELIC. Tente novamente mais tarde.")
-
-# --- Rodapé leve sem crédito ---
-st.markdown(
-    """
-    <div class="footer">
-        Calculadora de correção baseada em SELIC.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+            st.error("Falha ao carregar a tabela SELIC.")

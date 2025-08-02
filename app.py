@@ -237,7 +237,10 @@ st.markdown(
 )
 
 st.title("📈 Calculadora SELIC")
-st.write("Corrige valores monetários aplicando a taxa SELIC")
+st.markdown(
+    '<p style="text-align: center; font-size: 1.1em; color: #333;">Corrige valores monetários aplicando a taxa SELIC</p>',
+    unsafe_allow_html=True
+)
 
 st.divider() # Este divisor tem margem superior de 8px e inferior de 8px
 

@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-import base64 
+import base64
 
 # --- função para converter a imagem local em base64 ---
 def get_base64_of_bin_file(bin_file):

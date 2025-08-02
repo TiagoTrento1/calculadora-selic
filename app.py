@@ -5,22 +5,14 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import base64
 
-# --- função para converter a imagem local em base64 ---
-def get_base64_of_bin_file(bin_file):
-    try:
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except FileNotFoundError:
-        st.error(f"Erro: Arquivo '{bin_file}' não encontrado. Certifique-se de que a imagem está na mesma pasta.")
-        return None
-
-# --- pega o base64 da imagem latam.jpg (deve estar na mesma pasta) ---
-img_base64 = get_base64_of_bin_file("latam.jpg")
+# --- Removido: A função get_base64_of_bin_file não é mais necessária ---
+# --- A imagem de fundo agora é uma URL direta ---
+background_url = "https://www.latamairlines.com/content/dam/latamxp/sites/nuestra-flota/767/M3-INT-LTM_B767_Frontal-1024x683.jpg.transform/sm/image.jpg"
 
 # --- Configuração da Página e CSS com background do avião LATAM ---
 st.set_page_config(page_title="Calculadora SELIC", page_icon="📈", layout="centered")
 
+# --- O CSS foi alterado para usar a URL diretamente ---
 CHILE_CSS = f"""
 <style>
     :root {{
@@ -40,7 +32,7 @@ CHILE_CSS = f"""
         margin: 0;
         background: 
             linear-gradient(rgba(245,247,250,0.85), rgba(245,247,250,0.85)),
-            url("data:image/jpg;base64,{img_base64}") center/cover no-repeat;
+            url("{background_url}") center/cover no-repeat;
         background-attachment: fixed;
     }}
 
@@ -266,7 +258,6 @@ def processar_tabela_mensal_e_somar(tabela_df, data_inicial):
         inicio_loop = mes_inicial_num + 1 if ano == ano_inicial else 1
         
         for mes_num in range(inicio_loop, 13):
-            # Parar o cálculo se o ano for o atual e o mês for o mês corrente ou futuro
             if ano == ano_atual and mes_num >= hoje.month:
                 break
             
@@ -285,59 +276,56 @@ url_selic = "https://sat.sef.sc.gov.br/tax.net/tax.Net.CtacteSelic/TabelasSelic.
 id_tabela_mensal = "lstValoresMensais"
 
 if st.button("Calcular"):
-    if not img_base64:
-        st.error("Não foi possível carregar a imagem de fundo. Verifique o arquivo `latam.jpg`.")
-    else:
-        with st.spinner('Buscando dados e calculando...'):
-            tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
-            if tabela_mensal is not None:
-                total_taxa, erro_msg = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
-                if erro_msg:
-                    st.warning(erro_msg)
-                elif total_taxa is not None and total_taxa > 0:
-                    valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
+    with st.spinner('Buscando dados e calculando...'):
+        tabela_mensal = buscar_tabela_por_id(url_selic, id_tabela_mensal)
+        if tabela_mensal is not None:
+            total_taxa, erro_msg = processar_tabela_mensal_e_somar(tabela_mensal, data_selecionada)
+            if erro_msg:
+                st.warning(erro_msg)
+            elif total_taxa is not None and total_taxa > 0:
+                valor_corrigido = valor_digitado * (1 + (total_taxa / 100))
 
-                    # Info box
-                    info_html = f"""
-                    <div style="
-                        background: #ffffff;
-                        border-left: 6px solid #0033A0;
-                        padding: 14px 16px;
-                        border-radius: 8px;
-                        color: #1f2d3a;
-                        font-weight: 600;
-                        font-size: 1em;
-                        margin-bottom: 8px;
-                    ">
-                        Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
-                    </div>
-                    """
-                    st.markdown(info_html, unsafe_allow_html=True)
+                # Info box
+                info_html = f"""
+                <div style="
+                    background: #ffffff;
+                    border-left: 6px solid #0033A0;
+                    padding: 14px 16px;
+                    border-radius: 8px;
+                    color: #1f2d3a;
+                    font-weight: 600;
+                    font-size: 1em;
+                    margin-bottom: 8px;
+                ">
+                    Taxa SELIC calculada a partir de {data_selecionada.strftime('%m/%Y')}: {total_taxa:,.2f}%
+                </div>
+                """
+                st.markdown(info_html, unsafe_allow_html=True)
 
-                    # Resultado com label centralizado e valor maior
-                    resultado_html = f"""
-                    <div style="
-                        background: #ffffff;
-                        padding: 28px 22px;
-                        border-radius: 14px;
-                        border: 2px solid #0033A0;
-                        box-shadow: 0 10px 24px rgba(0,0,0,0.1);
-                        margin-top: 10px;
-                        text-align: center;
-                        max-width: 500px;
-                        margin-left: auto;
-                        margin-right: auto;
-                    ">
-                        <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
-                            Valor Corrigido (R$):
-                        </div>
-                        <div style="font-size: 4em; font-weight: 900; color: #D52B1E; line-height:1;">
-                            R$ {valor_corrigido:,.2f}
-                        </div>
+                # Resultado com label centralizado e valor maior
+                resultado_html = f"""
+                <div style="
+                    background: #ffffff;
+                    padding: 28px 22px;
+                    border-radius: 14px;
+                    border: 2px solid #0033A0;
+                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+                    margin-top: 10px;
+                    text-align: center;
+                    max-width: 500px;
+                    margin-left: auto;
+                    margin-right: auto;
+                ">
+                    <div style="font-size: 2.4em; font-weight: 800; color: #0033A0; margin-bottom:6px;">
+                        Valor Corrigido (R$):
                     </div>
-                    """
-                    st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
-                else:
-                    st.warning("Não foi possível calcular com os dados disponíveis.")
+                    <div style="font-size: 6.5em; font-weight: 900; color: #D52B1E; line-height:1;">
+                        R$ {valor_corrigido:,.2f}
+                    </div>
+                </div>
+                """
+                st.markdown(resultado_html.replace('.', '#').replace(',', '.').replace('#', ','), unsafe_allow_html=True)
             else:
-                st.error("Falha ao carregar a tabela SELIC.")
+                st.warning("Não foi possível calcular com os dados disponíveis.")
+        else:
+            st.error("Falha ao carregar a tabela SELIC.")

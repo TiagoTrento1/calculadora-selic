@@ -207,9 +207,7 @@ st.markdown(
                 font-size: 2.8em !important;
             }
 
-            .stDivider {
-                margin: 5px 0; /* AJUSTE AQUI: Divisores mais próximos em telas menores */
-            }
+           
             .stMarkdown h3 {
                 margin-top: 5px; /* AJUSTE AQUI: Títulos h3 mais próximos em telas menores */
                 margin-bottom: 5px;

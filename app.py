@@ -306,15 +306,14 @@ if st.button("Calcular"):
                 # Métrica customizada com fundo branco e valor em reais ainda maior
                 valor_html = f"""
                 <div style="
-                    background: #ffffff !important;
-                    padding: 26px;
-                    border-radius: 14px;
-                    border: 2px solid #0033A0;
-                    box-shadow: 0 10px 24px rgba(0,0,0,0.1);
-                    margin-top: 10px;
-                    text-align: center;
-                    display: inline-block;
-                    width: 100%;
+                    background: #ffffff;
+                    border-left: 6px solid #0033A0;
+                    padding: 14px 16px;
+                    border-radius: 8px;
+                    color: #1f2d3a;
+                    font-weight: 600;
+                    font-size: 1em;
+                    margin-bottom: 8px;
                 ">
                     <div style="font-size: 1.8em; font-weight: 700; color: #0033A0; margin-bottom:10px;">
                         Valor Corrigido (R$):

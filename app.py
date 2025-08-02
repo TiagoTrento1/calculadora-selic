@@ -253,13 +253,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-valor_digitado = st.number_input(
-    "**Valor base para o cálculo (R$):**",
-    min_value=0.01,
-    format="%.2f",
-    value=1000.00,
-    key="valor_base_input"
-)
+with col2:
+    st.markdown(
+        '<p style="text-align: center; font-size: 1.1em; color: white; font-weight: bold;">Valor base para o cálculo (R$):</p>',
+        unsafe_allow_html=True
+    )
+    valor_digitado = st.number_input(
+        label="",
+        min_value=0.01,
+        format="%.2f",
+        value=1000.00,
+        label_visibility="collapsed"  # Esconde o label original
+    )
 
 st.markdown("</div></div>", unsafe_allow_html=True)
 
